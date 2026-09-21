@@ -1,0 +1,17 @@
+[
+    {
+	"path": "midi/EliteSyncopations.mid",
+	"name": "エリート・シンコペーションズ(ピアノ作品)",
+	"lisence": "public domain"
+    },
+    {
+	"path": "midi/PossumAndTaters.mid",
+	"name": "ポッサムとポッターズ(ピアノ作品)",
+	"lisence": "public domain"
+    },
+    {
+	"path": "midi/PineappleRag.mid",
+	"name": "パイナップル・ラグ(ピアノ作品)",
+	"lisence": "public domain"
+    }
+]
