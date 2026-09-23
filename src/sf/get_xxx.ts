@@ -2,7 +2,7 @@ export function getString(array, start, end){ return String.fromCharCode.apply("
 export function getDword(array, i){ return array[i]+256*array[i+1]+256*256*array[i+2]+256*256*256*array[i+3]; }
 export function getWord(array, i){ return array[i]+256*array[i+1]; }
 export function getChar(array, i){ return array[i]; }
-export function getShort(array, i){ new Int16Array(array.subarray(i, i+1).buffer)[0]; }
+export function getShort(array, i){ return new Int16Array(array.subarray(i, i+1).buffer)[0]; }
 export function getModulator(array){
     return { mod_src_oper: getWord(array, 0),
              gen_name: getGeneratorName(getWord(array, 2)),
@@ -19,6 +19,7 @@ export function getGenerator(array){
     if( name==="key_range" || name=="vel_range" ) return { name: name, data: [array[2], array[3]] };
     return { name: name, data: getShort(array, 2) };
 };
+
 function getGeneratorName(id){
     let name_list=[
         "start_addrs_offset",   "end_addrs_offset",      "start_loop_addrs_offset", "end_loop_addrs_offset", "start_addrs_coarse",
