@@ -9,8 +9,8 @@ export default (shdr, sdta) => {
         samples.push({
             name: getString(shdr.data, i, i+20),
             sample: getSampleData(sdta, start, end),
-            loop_start: getDword(shdr.data, i+28),
-            loop_end: getDword(shdr.data, i+32),
+            loop_start: getDword(shdr.data, i+28) - start,
+            loop_end: getDword(shdr.data, i+32) - start,
             sampling_rate: getDword(shdr.data, i+36),
             origin_pitch: shdr.data[i+40],
             correction: getChar(shdr.data, i+41),
