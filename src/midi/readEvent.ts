@@ -1,7 +1,7 @@
 import readVLQ from './readVLQ.ts'
 
-export default (view: DataView, offset: number) => {
-    const obj = {};    
+export default (view: DataView, offset: number, tick: number) => {
+    const obj = { tick };
     const byte = view.getUint8(offset++);
     
     if( byte === 0xff ) return parse_meta_event(view, offset, obj);
@@ -16,7 +16,7 @@ export default (view: DataView, offset: number) => {
     }    
     else{
 	console.log('running status');
-	throw new Error('tmp');
+	throw new Error('ランニングステータスはまだサポートしていません');
     }    
 }
 

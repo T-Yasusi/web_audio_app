@@ -1,9 +1,13 @@
 import { readFile } from "node:fs/promises";
 import read_riff from "../src/read_riff.ts";
 import parseSF from '../src/sf/parse.ts';
+import dumpSF from '../src/sf/dump.ts';
 
-// const data = await readFile("public/soundfount/GeneralUser-GS.sf2");
-const data = await readFile("public/soundfount/FluidR3.sf3");
-
-const riff = read_riff(data);
-parseSF(riff);
+const files = [ "public/soundfount/GeneralUser-GS.sf2",
+		"public/soundfount/FluidR3.sf3" ];
+for( const file of files ){
+    const data = await readFile(file);
+    const riff = read_riff(data);
+    const json = parseSF(riff);
+    dumpSF(json);
+}

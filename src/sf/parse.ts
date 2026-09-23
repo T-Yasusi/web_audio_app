@@ -22,5 +22,8 @@ export default (riff) => {
 
     const preset_list = parse_preset_list(riff.data[2].data[0]);
     const presets = parse_presets(preset_list, riff.data[2].data[1], riff.data[2].data[2], riff.data[2].data[3], insts);
+
+    json.presets = presets;
+    return json;
 };
 
