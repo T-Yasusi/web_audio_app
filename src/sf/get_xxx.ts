@@ -14,7 +14,7 @@ export function getModulator(array){
 
 export function getGenerator(array){
     let name=getGeneratorName(getWord(array, 0));
-    if( !name ) throw new Error("tmp exception");
+    if( !name ) throw new Error("SondfFont : Generator名が見つかりませんでした");
     if( name==="sample_id" || name==="instrument" ) return { name: name, data: getWord(array, 2) };
     if( name==="key_range" || name=="vel_range" ) return { name: name, data: [array[2], array[3]] };
     return { name: name, data: getShort(array, 2) };

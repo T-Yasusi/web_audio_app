@@ -9,10 +9,18 @@
   <body>
     <script type="module" src="/src/main.ts"></script>
     <header>
+      <div id="wudio_context">
+	オーディオ時間:<input type="number" step="0.01" id="audio_time"></input>[s] <button id="audio_status"></button> <br>
+	ベースレイテンシ:<input type="number" step="0.01" id="base_latency"></input>[s]
+	出力レイテンシ:<input type="number" step="0.01" id="output_latency"</input>[s]
+      </div>
       <span>サウンドフォント:</span> <select id="sf_file"></select> <br>
       <span>MIDIファイル:</span> <select id="midi_file"></select><br>
-      <input id="midi_note_slider" type="range" min="0" max="127" value="60">
-      音程: <span id="midi_note">C</span>
+      
+      <!-- <input id="midi_note_slider" type="range" min="0" max="127" value="60"> 音程: <span id="midi_note">C</span> -->
+      ボリューム: <input id="volume" type="number" min="0" max="1" step="0.01" value="0.3"></input>
+      <input id="volume_slider" type="range" min="0" max="1" step="0.01" value="0.3"></input><br>
+      <button id="play_midi">再生</button>
     </header>
 
     <div id="main">
