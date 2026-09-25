@@ -22,20 +22,21 @@ export default (view: DataView, offset: number, tick: number) => {
 
 function parse_midi_event(view: DataView, byte: number, offset: number, obj: object){
     obj.event = 'midi';
+
     const type = (byte >> 4) & 0xf
     obj.channel = byte & 0xf
+//    console.log(byte);
 //    console.log(byte.toString(16), type, obj.channel);
+
     if( type === 0xC || type === 0xD ){
-	obj.data = [ view.getUint8(offset) ];
+	obj.data = view.getUint8(offset) ;
 	offset += 1;
     }
     else{
 	obj.data = [ view.getUint8(offset), view.getUint8(offset+1) ];
 	offset += 2;
     }
-    if ( type === 0x8 ){
-	obj.type = "noteOff";
-    }
+    if ( type === 0x8 )     obj.type = "noteOff";
     else if( type === 0x9 ) obj.type ="noteOn";
     else if( type === 0xA ) obj.type ="keyPressure";
     else if( type === 0xB ) obj.type ="controlChange";

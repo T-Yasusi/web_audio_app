@@ -6,6 +6,8 @@ import set_sf_table from './set_sf_table.ts'
 
 import { midi_files,  sf_files } from './../global_vals.ts'
 
+import const_midi from '../web_audio/const_midi.ts'
+
 const slider = document.getElementById('midi_note_slider');
 const span = document.getElementById('midi_note');
 
@@ -16,7 +18,6 @@ slider.addEventListener('change', ()=>{
     const str_list = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
 
     span.innerHTML =  str_list[b]+a;
-    console.log(val, a, b, str_list[b]+a);
 });
 
 slider.dispatchEvent(new Event('change'));
@@ -46,7 +47,7 @@ for( const [i, sf_file] of sf_files.entries() ){
 
 select.addEventListener('change', (e)=>{
     const no = e.target.value;
-    console.log(sf_files[no]);
+//    console.log(sf_files[no]);
     set_sf_table(sf_files[no].data);
 });
 select.dispatchEvent(new Event('change'));
