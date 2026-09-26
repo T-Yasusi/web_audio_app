@@ -51,11 +51,12 @@ export default (context, note, vel, start_time, duration, preset) => {
 	    gain.connect(filter);
 	    filter.connect(panner);
 
-	    // console.log(-(inst_params.init_attenuation + preset_params.init_attenuation));
-	    // console.log(10**(-(inst_params.init_attenuation + preset_params.init_attenuation)*0.04/20));
-	    // console.log((inst_params.pan + preset_params.pan)/500);
-
-//	    gain.gain.value = 10**(-(inst_params.init_attenuation + preset_params.init_attenuation)*0.04/20);
+//	    console.log(-(inst_params.init_attenuation + preset_params.init_attenuation));
+//	    console.log(10**(-(inst_params.init_attenuation + preset_params.init_attenuation)*0.04/20));
+//	    console.log((inst_params.pan + preset_params.pan)/500);
+//	    throw new Error('tmp')
+	    
+	    gain.gain.value = 10**(-(inst_params.init_attenuation + preset_params.init_attenuation)*0.04/20);
 	    panner.pan.value = (inst_params.pan + preset_params.pan)/500;
 	    filter.frequency.value = 8.176 * 2 ** ((inst_params.init_filter_Fc+preset_params.init_filter_Fc) / 1200);
 	
