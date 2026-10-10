@@ -12,7 +12,7 @@ const LEAD = 0.2;        // 再生開始までの余裕(秒)
 export default async function play(midi_json, sf_json) {
     await context.resume();                         // 先に再開してから時刻を読む
     const base_time = context.currentTime + LEAD;   // 曲の0秒に対応するコンテキスト時刻
-
+    
     // プリセットは (bank, program) で引く。なければ GM のバンク、さらになければ先頭へ
     const presets = new Map(sf_json.presets.map(p => [p.bank * 128 + p.MIDInumber, p]));
     const find_preset = (bank, program) => {
@@ -24,12 +24,12 @@ export default async function play(midi_json, sf_json) {
     const events = midi_json.tracks.flat().sort((a, b) => a.tick - b.tick);
     const program = new Array(16).fill(0);   // チャンネルごとのプログラム
     const bank = new Array(16).fill(0);      // チャンネルごとのバンク(CC0)
+    const channels = Array.from({ length: 16 }, () => create_channel(context, master_gain));
     let index = 0;                           // 次に処理するイベント
 
     function scheduling() {
         const song_now = context.currentTime - base_time;   // 曲の何秒目か
         const horizon = song_now + LOOKAHEAD;
-	const channels = Array.from({ length: 16 }, () => create_channel(context, master_gain));
 	
         while( index < events.length ){
             const event = events[index];
@@ -48,7 +48,8 @@ export default async function play(midi_json, sf_json) {
                 if( !preset ) continue;
                 const stop = calc_time(event.endTick, midi_json);
                 const gain = create_node_from_sf(context, event.midi_note, event.velocity,
-                                                 base_time + start, stop - start, preset, channels[event.channel]);
+                                                 base_time + start, stop - start, preset, channels[event.channel],
+						 { release_scale: event.release_scale, soft: event.soft });
                 gain.connect(channels[event.channel].input);
             }
         }

@@ -1,3 +1,5 @@
+import adjust_note_ends from './adjust_note_ends.ts'
+
 const DEFAULT_TEMPO = 500000;   // 120BPM (SMFの既定値)
 
 export default function build_song(json) {
@@ -13,6 +15,7 @@ export default function build_song(json) {
     // ノートは全トラックから作る。MIDIイベントのないトラック(テンポ専用トラックなど)は除く
     const tracks = json.tracks.map(build_track).filter(t => t.length > 0);
 
+    adjust_note_ends(json.tracks.flat(), tracks.flat());   // 元のイベント(CC)と、組み立てたノートを渡す
     return { format: json.format, division: json.division, tempos, tracks };
 }
 

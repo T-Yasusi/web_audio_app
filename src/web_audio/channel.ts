@@ -41,6 +41,14 @@ export function apply_event(ch: Channel, event: any, when: number) {
             s.bend_range = value;
             update_bend(ch, when);
         }
+	else if( cc === 121 ){   // コントローラのリセット(ボリュームとパンは戻さない)
+            s.expression = 127;
+            ch.input.gain.setTargetAtTime(concave(s.volume) * concave(s.expression), when, SMOOTH);
+            s.bend = 0;
+            update_bend(ch, when);
+            s.rpn_msb = 127;
+            s.rpn_lsb = 127;
+        }
     }
 }
 
