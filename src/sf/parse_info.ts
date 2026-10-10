@@ -1,21 +1,41 @@
-export default (chunk) => {
-    const getString = (array, first, last) => String.fromCharCode.apply('', array.subarray(first, last).filter(a=>{ return a!==0; }));
-    
-    let info={};
-    for( let a of chunk.data ){
-        if( a.type==='ifil' ) info['sf_version']= { major: a.data[0]+10*a.data[1], minor: a.data[2]+10*a.data[3] }
-        else if( a.type==='isng' ) info['sound_engin']=getString(a.data, 0, a.size);
-        else if( a.type==='INAM' ) info['name']=getString(a.data, 0, a.size);
-        else if( a.type==='irom' ) info['ROM']=getString(a.data, 0, a.size);
-        else if( a.type==='iver' ) info['rom_version']=1000*a.data[0]+100*a.data[1]+10*a.data[2]+a.data[3];
-        else if( a.type==='ICRD' ) info['date']=getString(a.data, 0, a.size);
-        else if( a.type==='IENG' ) info['designer']=getString(a.data, 0, a.size);
-        else if( a.type==='IPRD' ) info['product']=getString(a.data, 0, a.size);
-        else if( a.type==='ICOP' ) info['copy_right']=getString(a.data, 0, a.size);
-        else if( a.type==='ICMT' ) info['comment']=getString(a.data, 0, a.size);
-        else if( a.type==='ISFT' ) info['tool']=getString(a.data, 0, a.size);
-        else throw new Error('Sound Font  Infoチャンク 不明な識別子があります '+a.type);
-    }
-    return info;
+const STRING_FIELDS = {
+    isng: 'sound_engine',
+    INAM: 'name',
+    irom: 'rom',
+    ICRD: 'date',
+    IENG: 'designer',
+    IPRD: 'product',
+    ICOP: 'copyright',
+    ICMT: 'comment',
+    ISFT: 'tool',
 };
 
+const decoder = new TextDecoder('latin1');
+
+// ZSTR: 最初のNULまでが文字列。以降は偶数長に合わせる詰め物
+function read_zstr(bytes) {
+    const end = bytes.indexOf(0);
+    return decoder.decode(end < 0 ? bytes : bytes.subarray(0, end));
+}
+
+const u16 = (b, o) => b[o] | (b[o + 1] << 8);
+
+// ifil / iver 共通: wMajor, wMinor (各16bit リトルエンディアン)
+function read_version(bytes, id) {
+    if( bytes.length !== 4 ) throw new Error(`${id} チャンクのサイズが不正です: ${bytes.length}`);
+    return { major: u16(bytes, 0), minor: u16(bytes, 2) };
+}
+
+export default function parse_info(list) {
+    const info = {}
+    for( const chunk of list.children ){
+        if( chunk.id === 'ifil' ) info.sf_version = read_version(chunk.data, 'ifil');
+        else if( chunk.id === 'iver' ) info.rom_version = read_version(chunk.data, 'iver');
+        else if( STRING_FIELDS.hasOwnProperty(chunk.id) ){
+	    info[STRING_FIELDS[chunk.id]] = read_zstr(chunk.data);
+            // 未知のチャンクは無視する(RIFFの慣例)
+	}
+    }
+    if( !info.sf_version ) throw new Error('INFOチャンクに必須のifilがありません');
+    return info;
+}

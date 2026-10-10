@@ -1,57 +1,54 @@
-export default (json) => {
-    for( const [ i, track ] of json.tracks.entries() ){
-	const tempos = track.filter(a => a.event === 'Meta' && a.type === 'Set Tempo');
-	if( tempos.length > 0 && i !== 0 ) throw new Error('TempoがTrack[0]以外に表れました');
-    }
-    const tempos = json.tracks[0].filter(a => a.event === 'Meta' && a.type === 'Set Tempo');
+const DEFAULT_TEMPO = 500000;   // 120BPM (SMFの既定値)
 
-    const tracks = []
-    for( let i=1; i<json.tracks.length; i++ ){
-	const track = [];
-	const noteOn_events = [];
-	for( const event of json.tracks[i] ){
-	    if( event.type === 'noteOn' ){
-		if( event.data[1] > 0 ){
-		    noteOn_events.push({ type: 'note',
-					 channel: event.channel,
-					 midi_note: event.data[0],
-					 velocity: event.data[1],
-					 tick: event.tick });
-		}
-		else if( event.data[1] === 0 ){
-		    const id = noteOn_events.findIndex(a => a.midi_note === event.data[0] && a.channel === event.channel)
-		    if( id<0 ){
-//			console.log(event);
-//			console.log(noteOn_events);
-//			console.log('NoteOn vel=0: そのノートは鳴っていません');
-			continue;
-		    }
-		    const obj = noteOn_events.splice(id, 1);
-		    obj[0].endTick = event.tick;
-		    track.push(obj[0]);		    
-		}
-	    }
-	    else if ( event.type === 'noteOff' ){
-		const id = noteOn_events.findIndex(a => a.midi_note === event.data[0] && a.channel === event.channel)
-		if( id<0 ){
-//		    console.log(event);
-//		    console.log(noteOn_events)				
-//		    console.log('NoteOff: そのノートは鳴っていません');
-		    continue;
-		}
-		const obj = noteOn_events.splice(id, 1);
-		obj[0].endTick = event.tick;
-		track.push(obj[0]);
-	    }
-	    else if( event.event === 'midi' ) track.push(event);
-	}
-//	console.log(track.length);
-	if( noteOn_events.length !== 0 ) throw new Error('鳴っているノートが残っています');
-//	console.log(noteOn_events.length);
-	//	throw new Error('tmp');
-	track.sort((a, b)=> a.tick - b.tick);
-	tracks.push(track);
+export default function build_song(json) {
+    if( json.format === 2 ) throw new Error('フォーマット2はサポートしていません');
+
+    // テンポは全トラックから集めて tick 順に並べる(通常は Track 0 にある)
+    const tempos = json.tracks.flat()
+        .filter(e => e.event === 'Meta' && e.type === 'Set Tempo')
+        .sort((a, b) => a.tick - b.tick);
+    if( tempos.length === 0 || tempos[0].tick > 0 )
+        tempos.unshift({ tick: 0, event: 'Meta', type: 'Set Tempo', id: 0x51, data: DEFAULT_TEMPO });
+
+    // ノートは全トラックから作る。MIDIイベントのないトラック(テンポ専用トラックなど)は除く
+    const tracks = json.tracks.map(build_track).filter(t => t.length > 0);
+
+    return { format: json.format, division: json.division, tempos, tracks };
+}
+
+function build_track(events) {
+    const track = [];
+    const active = new Map();   // channel*128+note -> 鳴っているノートの配列(古い順)
+    let last_tick = 0;
+
+    for( const event of events ){
+        last_tick = event.tick;
+        if( event.event !== 'midi' ) continue;
+
+        if( event.type === 'noteOn' || event.type === 'noteOff' ){
+            const key = event.channel * 128 + event.data[0];
+
+            if( event.type === 'noteOn' && event.data[1] > 0 ){
+                const note = { type: 'note', channel: event.channel, midi_note: event.data[0],
+                               velocity: event.data[1], tick: event.tick, endTick: undefined };
+                if( !active.has(key) ) active.set(key, []);
+                active.get(key).push(note);
+                track.push(note);   // NoteOn の位置に置く。ファイルの順序が保たれ、sort が要らない
+            }
+            else{
+                // noteOff、またはベロシティ0の noteOn。古いノートから閉じる
+                const note = active.get(key)?.shift();
+                if( note ) note.endTick = event.tick;   // 鳴っていないノートへの NoteOff は無視
+            }
+        }
+        else track.push(event);
     }
-    const format = json.format, division = json.division;
-    return { format, division, tempos, tracks };
+
+    // 閉じられなかったノートは、トラックの終わり(End of Track があればその tick)で止める
+    let unclosed = 0;
+    for( const list of active.values() )
+        for( const note of list ){ note.endTick = last_tick; unclosed++; }
+    if( unclosed > 0 ) console.warn(`NoteOffのないノートを ${unclosed} 個、トラック終端で止めました`);
+
+    return track;
 }

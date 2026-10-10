@@ -1,16 +1,25 @@
 import { getString, getWord, getDword } from './get_xxx.ts'
 
-export default (phdr) => {
-    let presets=[];
-    for( let i=0; i<phdr.data.length; i+=38 ){
-        presets.push({ name:       getString(phdr.data, i, i+20),
-                       MIDInumber: getWord(phdr.data, i+20),
-                       bank:       getWord(phdr.data, i+22),
-                       Ndx:        getWord(phdr.data, i+38+24), // 次のphdrのNdxを入れている。
-                       library:    getDword(phdr.data, i+26),
-                       generator:  getDword(phdr.data, i+30),
-                       morphology: getDword(phdr.data, i+34)
-                     });
+const PHDR_SIZE = 38;
+
+export default function parse_preset_list(phdr) {
+    const rec = phdr.data;
+    if( rec.length < PHDR_SIZE || rec.length % PHDR_SIZE !== 0 )
+        throw new Error(`phdrチャンクのサイズが不正です: ${rec.length}`);
+
+    const list = [];
+    // 最後の1レコードは終端(EOP)。その開始位置が最後のプリセットの終端になる
+    for( let i=0; i<rec.length-PHDR_SIZE; i+=PHDR_SIZE ){
+        list.push({
+            name:       getString(rec, i, i+20),
+            MIDInumber: getWord(rec, i+20),
+            bank:       getWord(rec, i+22),
+            bag_start:  getWord(rec, i+24),
+            bag_end:    getWord(rec, i+PHDR_SIZE+24), // 次のレコードの開始位置
+            library:    getDword(rec, i+26),
+            genre:      getDword(rec, i+30),
+            morphology: getDword(rec, i+34),
+        });
     }
-    return presets
-};
+    return list;
+}

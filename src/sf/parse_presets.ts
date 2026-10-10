@@ -1,53 +1,18 @@
-import { getWord, getGenerator, getModulator } from './get_xxx.ts'
+import parse_zones from './parse_zones.ts'
 
-export default (preset_list, ibag, imod, igen, insts) => {
-    let bIndex=0;
-    let gIndex=0;
-    let mIndex=0;
-    let presets=[];
-    for( let i=0; i<preset_list.length; i++ ){
-        let preset_obj={ name:       preset_list[i].name,
-                         MIDInumber: preset_list[i].MIDInumber,
-                         bank:       preset_list[i].bank,
-                         library:    preset_list[i].library,
-                         generator:  preset_list[i].generator,
-                         morphology: preset_list[i].morphology,
-                         zones: [] };
-        for( let j=bIndex; j<preset_list[i].Ndx; j++ ){
-            let gNext=getWord(ibag.data, 4*(j+1));   // 次の要素のインデックスを読む。
-            let mNext=getWord(ibag.data, 4*(j+1)+2);
+export default function parse_presets(preset_list, pbag, pmod, pgen, insts) {
+    return preset_list.map(p => {
+        const { bag_start, bag_end, ...rest } = p;
+        const { zones, global_zone } =
+            parse_zones(p.name, bag_start, bag_end, pbag, pmod, pgen, 'instrument');
 
-            let zone={ generators: {}, modulators: [] };
-            for( let k=gIndex; k<gNext; k++ ){
-                let gen=getGenerator(igen.data.subarray(4*k, 4*(k+1)));
-                if( k===gNext-1 ){
-                    if( j===bIndex && gen.name!=="instrument" ){
-                        if( zone.generators[gen.name] ) throw new Error("同じGenerator IDがあります");
-                        zone.generators[gen.name]=gen.data;
-                    }
-                    else if( gen.name!=="instrument" ) throw new Error("Generatorの最後がinstrumntでありません");
-                    else zone.instrument=insts[gen.data];
-                }
-                else{
-                    if( zone.generators[gen.name] ) throw new Error("同じGenerator IDがあります");
-                    zone.generators[gen.name]=gen.data;
-                }
-            }
-            for( let k=mIndex; k<mNext; k++ ){
-                zone.modulators.push(getModulator(imod.data.subarray(10*k, 10*(k+1))));
-            }
-
-            if( zone.modulators.length > 0){
-                console.log(zone.modulators);
-            }
-	    
-            if( zone.instrument ) preset_obj.zones.push(zone);
-            else  preset_obj.global_zone=zone;
-            gIndex=gNext;
-            mIndex=mNext;
-	}
-	bIndex=preset_list[i].Ndx;
-        if( preset_obj.name!=="EOP" ) presets.push(preset_obj);	
-    }
-    return presets;
+        const obj = { ...rest, zones: [] };
+        for( const { zone, ref } of zones ){
+            const instrument = insts[ref];
+            if( !instrument ) throw new Error(`${p.name}: 存在しないinstrumentです: ${ref}`);
+            obj.zones.push({ ...zone, instrument });
+        }
+        if( global_zone ) obj.global_zone = global_zone;
+        return obj;
+    });
 }

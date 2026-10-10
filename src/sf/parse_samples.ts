@@ -1,36 +1,53 @@
 import { getString, getDword, getWord, getChar } from './get_xxx.ts'
 
-export default (shdr, sdta) => {
-    let samples=[];
-    for( let i=0; i<shdr.data.length; i+=46 ){
-        const start=getDword(shdr.data, i+20);
-        const end=getDword(shdr.data, i+24);
-	
+const SHDR_SIZE = 46;
+
+export default function parse_samples(shdr, sdta) {
+    const rec = shdr.data;
+    if( rec.length % SHDR_SIZE !== 0 ) throw new Error(`shdrチャンクのサイズが不正です: ${rec.length}`);
+
+    const smpl = sdta.children.find(c => c.id === 'smpl');
+    if( !smpl ) throw new Error('sdtaチャンクにsmplがありません');
+    let sm24 = sdta.children.find(c => c.id === 'sm24');
+    // sm24 は1サンプル1バイト。足りなければ無視して16bitとして扱う
+    if( sm24 && sm24.children.length < smpl.children.length / 2 ) sm24 = undefined;
+
+    const view = new DataView(smpl.data.buffer, smpl.data.byteOffset, smpl.data.byteLength);
+
+    const samples = [];
+    // 最後の1レコードは終端(EOS)なので読まない
+    for( let i=0; i<rec.length-SHDR_SIZE; i+=SHDR_SIZE ){
+        const name = getString(rec, i, i+20);
+        const start = getDword(rec, i+20);
+        const end = getDword(rec, i+24);
+        if( start > end || 2*end > smpl.data.length )
+            throw new Error(`サンプル範囲が不正です: ${name} (${start}, ${end})`);
+
         samples.push({
-            name: getString(shdr.data, i, i+20),
-            sample: getSampleData(sdta, start, end),
-            loop_start: getDword(shdr.data, i+28) - start,
-            loop_end: getDword(shdr.data, i+32) - start,
-            sampling_rate: getDword(shdr.data, i+36),
-            origin_pitch: shdr.data[i+40],
-            correction: getChar(shdr.data, i+41),
-            sample_link: getWord(shdr.data, i+42),
-	    sample_type: getWord(shdr.data, i+44)
+            name,
+            sample: decode_samples(view, sm24, start, end),
+            loop_start: getDword(rec, i+28) - start,
+            loop_end: getDword(rec, i+32) - start,
+            sampling_rate: getDword(rec, i+36),
+            origin_pitch: rec[i+40],
+            correction: getChar(rec, i+41),
+            sample_link: getWord(rec, i+42),
+            sample_type: getWord(rec, i+44),
         });
     }
     return samples;
-};
+}
 
-function getSampleData(sdta, start, end){
-    const smpl=sdta.data[0];
-    const sm24=sdta.data[1];
-    let int_data=new Int16Array(new Uint8Array(smpl.data.subarray(2*start, 2*end)).buffer);
-    let data=new Float32Array(int_data.length);
-    
+function decode_samples(view, sm24, start, end){
+    const n = end - start;
+    const out = new Float32Array(n);
     if( sm24 ){
-        let int_sm24=new Int8Array(new Uint8Array(sm24.data.subarray(start, end)).buffer);
-        for( let i=0; i<int_data.length; i++ ) data[i]=(256*int_data[i]+int_sm24[i])/(32767.*256.); // Max of int16_t*uint8_t              
+        for( let k=0; k<n; k++ ){
+            const hi = view.getInt16(2*(start+k), true);  // 上位16bit(符号付き)
+            const lo = sm24.children[start+k];                 // 下位8bit(符号なし)
+            out[k] = (hi*256 + lo) / 8388608;              // 2^23
+        }
     }
-    else for( let i=0; i<int_data.length; i++ ) data[i]=int_data[i]/32767.; // Max of int16_t                                              
-    return data;
-};
+    else for( let k=0; k<n; k++ ) out[k] = view.getInt16(2*(start+k), true) / 32768;
+    return out;
+}

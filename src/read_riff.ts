@@ -1,35 +1,52 @@
-export default function read_riff(data){
-    const array=new Uint8Array(data);
-//    console.log(data)
-//    console.log(String.fromCharCode.apply("", array.subarray(0, 4)))
-    if( String.fromCharCode.apply("", array.subarray(0, 4))!=="RIFF" ) throw new Error("RIFFファイルではありません");
-    if( get_size(array.subarray(4, 8))!==array.length-8 ) throw new Error("ファイルサイズが一致しません");
+export type RiffChunk = { id: string; size: number; data: Uint8Array };
+export type RiffList = {
+  id: "RIFF" | "LIST";
+  type: string; // 形式タイプ(sfbk, INFO, sdta, pdta など)
+  size: number;
+  children: RiffNode[];
+};
+export type RiffNode = RiffChunk | RiffList;
 
-//    console.log("File Size :", array.length-8);
-    return riff_data(array);
-    
-    function riff_data(array){
-        const id=String.fromCharCode.apply("", array.subarray(0, 4));
-        const size=get_size(array.subarray(4, 8));
+export default function readRiff(buffer: ArrayBuffer | Uint8Array): RiffList {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
-        if( id==="RIFF" || id==="LIST" ){
-            let pos=12;
-            const type=String.fromCharCode.apply("", array.subarray(8, 12));
-            let data=[];
-            while( pos<size+8 ){
-                const child=riff_data(array.subarray(pos, array.length)); // 再帰
-                data.push(child);
-                pos+=8+child.size;
-            }
-            let	sum=0;
-            for( let d of data ) sum+=d.size;
-            sum+=8*data.length+4;
-            if( sum!==size )  throw new Error(type+"チャンクのファイルサイズが一致しません "+size+"  "+sum);
+  const fourcc = (o: number) =>
+    String.fromCharCode(bytes[o], bytes[o + 1], bytes[o + 2], bytes[o + 3]);
 
-            return { type: type, size: size, data: data };
-        }
-        else  return { type: id, size: size, data: array.subarray(8, 8+size) };
+  function parse(offset: number): { node: RiffNode; next: number } {
+    if (offset + 8 > bytes.length)
+      throw new Error(`オフセット ${offset}: チャンクヘッダが途切れています`);
+
+    const id = fourcc(offset);
+    const size = view.getUint32(offset + 4, true);
+    const bodyStart = offset + 8;
+    const bodyEnd = bodyStart + size;
+    if (bodyEnd > bytes.length)
+      throw new Error(`${id} チャンクのサイズがファイル長を超えています`);
+
+    const next = bodyEnd + (size % 2); // 奇数サイズ時のパディング
+
+    if (id === "RIFF" || id === "LIST") {
+      if (size < 4) throw new Error(`${id} チャンクが短すぎます`);
+      const type = fourcc(bodyStart);
+      const children: RiffNode[] = [];
+      let pos = bodyStart + 4;
+      while (pos < bodyEnd) {
+        const r = parse(pos);
+        children.push(r.node);
+        pos = r.next;
+      }
+      if (pos !== bodyEnd)
+        throw new Error(`${type} チャンクの子のサイズ合計が一致しません`);
+      return { node: { id, type, size, children }, next };
     }
-}
 
-function get_size(array){ return array[0]+256*array[1]+256*256*array[2]+256*256*256*array[3]; };
+    return { node: { id, size, data: bytes.subarray(bodyStart, bodyEnd) }, next };
+  }
+
+  const { node } = parse(0);
+  if (!("children" in node) || node.id !== "RIFF")
+    throw new Error("RIFFファイルではありません");
+  return node;
+}
