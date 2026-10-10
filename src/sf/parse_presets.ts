@@ -36,6 +36,10 @@ export default (preset_list, ibag, imod, igen, insts) => {
             for( let k=mIndex; k<mNext; k++ ){
                 zone.modulators.push(getModulator(imod.data.subarray(10*k, 10*(k+1))));
             }
+
+            if( zone.modulators.length > 0){
+                console.log(zone.modulators);
+            }
 	    
             if( zone.instrument ) preset_obj.zones.push(zone);
             else  preset_obj.global_zone=zone;

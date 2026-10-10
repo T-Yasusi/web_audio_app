@@ -30,6 +30,10 @@ export default (inst_list, ibag, imod, igen, samples) => {
             for( let k=mIndex; k<mNext; k++ ){
                 zone.modulators.push(getModulator(imod.data.subarray(10*k, 10*(k+1))));
             }
+
+	    if( zone.modulators.length > 0){
+		console.log('preset mods :', zone.modulators);
+	    }
 	    
             if( zone.sample ) inst_obj.zones.push(zone);
             else inst_obj.global_zone=zone;

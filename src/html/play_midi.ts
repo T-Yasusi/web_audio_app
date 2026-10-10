@@ -12,7 +12,7 @@ document.getElementById('play_midi').addEventListener('click', ()=>{
     const midi_json = midi_files[document.getElementById('midi_file').value].data;
     const sf_json = sf_files[document.getElementById('sf_file').value].data;
 
-    console.log(midi_json, sf_json);
+//    console.log(midi_json, sf_json);
     const_midi(midi_json, sf_json);
 }, { once: true });
 							

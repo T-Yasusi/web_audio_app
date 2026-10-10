@@ -13,10 +13,12 @@ export default (riff) => {
     check_chunk(riff);
     const json = {};
     json.info = parse_info(riff.data[0]);
-//    console.log(json);
+    console.log(json.info.sf_version);
+    if( json.info.sf_version.major !== 2 ){
+	throw new Error('Sound Font Version がサポート外です');
+    }
     
     const samples = parse_samples(riff.data[2].data[8], riff.data[1]);
-//    console.log(samples);
     const inst_list = parse_inst_list(riff.data[2].data[4]);
     const insts = parse_insts(inst_list, riff.data[2].data[5], riff.data[2].data[6], riff.data[2].data[7], samples);
 

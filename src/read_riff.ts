@@ -5,7 +5,7 @@ export default function read_riff(data){
     if( String.fromCharCode.apply("", array.subarray(0, 4))!=="RIFF" ) throw new Error("RIFFファイルではありません");
     if( get_size(array.subarray(4, 8))!==array.length-8 ) throw new Error("ファイルサイズが一致しません");
 
-    console.log("File Size :", array.length-8);
+//    console.log("File Size :", array.length-8);
     return riff_data(array);
     
     function riff_data(array){

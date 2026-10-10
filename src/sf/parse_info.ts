@@ -3,7 +3,7 @@ export default (chunk) => {
     
     let info={};
     for( let a of chunk.data ){
-        if( a.type==='ifil' ) info['sf_version']=1000*a.data[0]+100*a.data[1]+10*a.data[2]+a.data[3];
+        if( a.type==='ifil' ) info['sf_version']= { major: a.data[0]+10*a.data[1], minor: a.data[2]+10*a.data[3] }
         else if( a.type==='isng' ) info['sound_engin']=getString(a.data, 0, a.size);
         else if( a.type==='INAM' ) info['name']=getString(a.data, 0, a.size);
         else if( a.type==='irom' ) info['ROM']=getString(a.data, 0, a.size);

@@ -1,5 +1,11 @@
 [
     {
+	"path": "midi/Symphony7_1.mid",
+	"name": "交響曲第7番イ長調",
+	"license": "public domain",
+	"url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi"
+    },
+    {
 	"path": "midi/EliteSyncopations.mid",
 	"name": "エリート・シンコペーションズ(ピアノ作品)",
 	"license": "public domain"
@@ -17,12 +23,6 @@
     {
 	"path": "midi/ToccataFugue.mid",
 	"name": "トッカータとフーガ ニ短調",
-	"license": "public domain",
-	"url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi"
-    },
-    {
-	"path": "midi/Symphony7_1.mid",
-	"name": "交響曲第7番イ長調",
 	"license": "public domain",
 	"url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi"
     }
