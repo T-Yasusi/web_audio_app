@@ -1,4 +1,4 @@
-import schedule_volume from './create_node_from_sf/schedule_volume.ts'
+import applyADSREnvelope from './create_node_from_sf/applyADSREnvelope.ts'
 import calc_params from './create_node_from_sf/calc_params.ts'
 import create_buffer_source from './create_node_from_sf/create_buffer_source.ts'
 import is_match_zone from './create_node_from_sf/is_match_zone.ts'
@@ -40,7 +40,7 @@ export default function create_node_from_sf(context: AudioContext, note: number,
             // 音量: 減衰とベロシティ((vel/127)^2 は SF2 の既定カーブ)
             const base = 10 ** (-(p.init_attenuation * ATTEN_SCALE) / 200) * (vel / 127) ** 2;
             const amp = context.createGain();
-            const t_end = schedule_volume(amp.gain, start_time, duration, p, base);
+            const t_end = applyADSREnvelope(amp.gain, start_time, duration, p, base);
 
             const filter = context.createBiquadFilter();
             filter.type = 'lowpass';
