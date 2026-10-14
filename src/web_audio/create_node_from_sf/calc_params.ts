@@ -1,3 +1,8 @@
+const ATTEN_SCALE = 0.4;   // init_attenuation の係数(FluidSynth 互換。仕様の本文どおりなら 1.0)
+
+const SOFT_GAIN = 10 ** (-3 / 20);   // CC67: 音量 -3dB(量は好みで調整)
+const SOFT_CUTOFF = -1200;           // CC67: カットオフを1オクターブ下げる(同上
+
 // ジェネレータごとの [既定値, 最小, 最大]
 const GEN: Record<string, [number, number, number]> = {
     init_attenuation: [0,      0,      1440],
@@ -36,7 +41,8 @@ const GEN: Record<string, [number, number, number]> = {
 };
 const GEN_ENTRIES = Object.entries(GEN);
 
-export default function calc_params(iz: any, inst: any, pz: any, preset: any, note: number) {
+export default function calc_params(iz: any, inst: any, pz: any, preset: any, note: number,
+				    opts: { release_scale?: number; soft?: boolean } = {}) {
     const p: Record<string, number> = {};
     const k = 60 - note;
     for( const [name, [def, min, max]] of GEN_ENTRIES ){
@@ -48,6 +54,15 @@ export default function calc_params(iz: any, inst: any, pz: any, preset: any, no
     p.decay_vol_env += p.keynum_to_vol_env_decay * k;
     p.hold_mod_env  += p.keynum_to_mod_env_hold  * k;
     p.decay_mod_env += p.keynum_to_mod_env_decay * k;
-    
+
+    // ハーフペダル: リリース時間を倍率で伸ばす(タイムセントでは 1200 × log2(倍率) を足す)
+    if( opts.release_scale && opts.release_scale !== 1 ){
+        const tc = 1200 * Math.log2(opts.release_scale);
+        p.release_vol_env += tc;
+        p.release_mod_env += tc;
+    }
+    // ソフトペル: カットオフを下げる(音量は下の base に掛ける)
+    if( opts.soft ) p.init_filter_Fc = Math.max(1500, p.init_filter_Fc + SOFT_CUTOFF);
+
     return p;
 }

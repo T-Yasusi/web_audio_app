@@ -1,6 +1,10 @@
+const ATTEN_SCALE = 0.4;   // init_attenuation の係数(FluidSynth 互換。仕様の本文どおりなら 1.0)
 const timecents = (tc: number) => 2 ** (tc / 1200);
 
-export default function schedule_volume(g: AudioParam, t0: number, duration: number, p: Record<string, number>, base: number) {
+export default function createADSREnvelope(context: AudioContext, t0: number, vel: number, duration: number, p: Record<string, number>) {
+    const base = 10 ** (-(p.init_attenuation * ATTEN_SCALE) / 200) * (vel / 127) ** 2;
+    const amp = context.createGain();
+    
     const delay = timecents(p.delay_vol_env), attack = timecents(p.attack_vol_env);
     const hold = timecents(p.hold_vol_env), decay = timecents(p.decay_vol_env);
     const release = timecents(p.release_vol_env);
@@ -11,33 +15,34 @@ export default function schedule_volume(g: AudioParam, t0: number, duration: num
     const t_a0 = t0 + delay, t_a1 = t_a0 + attack, t_h1 = t_a1 + hold;
     const t_d1 = t_h1 + decay * sustain_db / 100;            // サスティンに達する時刻
 
-    g.setValueAtTime(0, t0);
+    amp.gain.setValueAtTime(0, t0);
     let level: number;                                       // ノートオフ時点の振幅
     if( t_off <= t_a0 ) level = 0;                           // ディレイの途中
     else{
-        g.setValueAtTime(0, t_a0);
+        amp.gain.setValueAtTime(0, t_a0);
         if( t_off <= t_a1 ){                                 // アタックの途中
             level = base * (t_off - t_a0) / attack;
-            g.linearRampToValueAtTime(level, t_off);
+            amp.gain.linearRampToValueAtTime(level, t_off);
         }
         else{
-            g.linearRampToValueAtTime(base, t_a1);
+            amp.gain.linearRampToValueAtTime(base, t_a1);
             if( t_off <= t_h1 ) level = base;                // ホールドの途中
             else{
-                g.setValueAtTime(base, t_h1);
+                amp.gain.setValueAtTime(base, t_h1);
                 if( t_off < t_d1 ){                          // ディケイの途中
                     level = base * 10 ** (-5 * (t_off - t_h1) / decay);
-                    g.exponentialRampToValueAtTime(level, t_off);
+                    amp.gain.exponentialRampToValueAtTime(level, t_off);
                 }
                 else{                                        // サスティン
                     level = sustain;
-                    if( t_d1 > t_h1 ) g.exponentialRampToValueAtTime(sustain, t_d1);
-                    g.setValueAtTime(sustain, t_off);
+                    if( t_d1 > t_h1 ) amp.gain.exponentialRampToValueAtTime(sustain, t_d1);
+                    amp.gain.setValueAtTime(sustain, t_off);
                 }
             }
         }
     }
     // リリース: ノートオフ時点の値から、dB 一定の傾きで下げる(時定数 = release / (5 ln10))
-    if( level > 0 ) g.setTargetAtTime(0, t_off, release / 11.513);
-    return t_off + release;
+    if( level > 0 ) amp.gain.setTargetAtTime(0, t_off, release / 11.513);
+    const end_time = t_off + release;
+    return { amp, end_time }
 }
