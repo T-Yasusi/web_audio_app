@@ -13,7 +13,7 @@
 
 ## 使用素材とライセンス
 ### MIDI
-| ---                          | ---                  | ---           | ---  | --- |
+|:---                         |:---                 |:---         :|: ---  :|: --- |
 | 名前                         | 作者                 | ライセンス    | 同梱 | URL | 
 | 交響曲第7番イ長調            | ベートヴェン         | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 | エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
@@ -22,6 +22,6 @@
 | トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 
 ### Sound Font
-| ---                | ---                  | ---           | ---  | --- |
+|:---                         |:---                 |:---         :|: ---  :|: --- |
 | 名前               | 作者                 | ライセンス    | 同梱 | URL |
 | GeneralUser-GS.sf2 | [S. Christian Collins](https://github.com/mrbumpy409) | Original | 〇 | [Github](https://github.com/mrbumpy409/GeneralUser-GS) |
