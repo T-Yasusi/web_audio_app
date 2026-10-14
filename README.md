@@ -11,7 +11,7 @@
 - MIDIのCC1(チャンネルプレッシャー)、CC91/93
 - Sound Fontのモジュレーター
 
-## 使用素材とライセンス
+## 使用素材
 ### MIDI
 
 | 名前                         | 作者                 | ライセンス    | 同梱 | URL |
@@ -26,3 +26,7 @@
 | 名前               | 作者                 | ライセンス    | 同梱 | URL |
 |:---                |:---                  |:---:          |:---: |:--- |
 | GeneralUser-GS.sf2 | [S. Christian Collins](https://github.com/mrbumpy409) | Original | 〇 | [Github](https://github.com/mrbumpy409/GeneralUser-GS) |
+
+## ライセンス
+このリポジトリはMITライセンスで公開しています。
+詳しくは[こちら](./LICENSE)を参照してください。
