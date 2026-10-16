@@ -31,18 +31,65 @@
 - NRPN: Non-Ragisterd Parameter Number (未登録済みパラメーター番号)
 
 ## Sound Fontジェネレーター
-
-
-
-## 実装済み機能
-- Sound Font2、SMF(MIDI)の読み込み、解析
-- Sound Fontのジェネレーターへの対応、音量エンベローブ、フィルタ、パンなど
-- MIDIのノートOn/Off、CC7/10/11、ビッチベンド、ペダルイベント等
-
-## 未対応機能
-- Sound Font3の読み込み、Ogg Vorbis(非可逆圧縮)形式への対応
-- MIDIのCC1(チャンネルプレッシャー)、CC91/93
-- Sound Fontのモジュレーター
+| 番号 | 名前                         | 単位         | 範囲  | 規定値 | 実装 |
+|:---: |:---:                         | :---         |:---:  |:---:   |:---: | 
+| 0    | Start Addres Offset          | サンプル     | 0以上 | 0      | × | 
+| 1    | End Addres Offset            | サンプル     | 0以上 | 0      | × |
+| 2    | Start Loop Addres Offset     | サンプル     | $\pm$ | 0      | × |
+| 3    | End Loop Address Offset      | サンプル     | $\pm$ | 0      | × |
+| 4    | Start Address Coarse         | 32768サンプル| 0以上 | 0      | × |
+| 5    | Mod LFO To Pitch             | セント       | $\pm 12000$ | 0 | 〇 |
+| 6    | Vib LFO to Pitch             | セント       | $\pm 12000$ | 0 | 〇 |
+| 7    | Mod Env to Pitch             | セント       | $\pm 12000$ | 0 | 〇 |
+| 8    | Initial Filter Fc            | 絶対セント   | $1500 ~ 13500 $ | 13500 | 〇 |
+| 9    | Initial Filter Q             | cB       | $0 ~ 960$ | 0 | 〇 |
+| 10   | Mod LFO To Filter Fc         | セント       | $\pm 12000$ | 0 | 〇 |
+| 11   | Mod Env To Filter Fc         | セント       | $\pm 12000$ | 0 | 〇 |
+| 12   | End Addres Coarse Offset     | 32768サンプル| 0以下  | 0      | × |
+| 13   | Mod LFO To Volume            | cB       | $\pm 960$ | 0 | 〇 |
+| 14   | (未使用) | - | - | - | -     |
+| 15   | Chorus Effect Send           | 0.1% | 0~1000 | 0 | ×  |
+| 16   | Reverb Effect Send           | 0.1% | 0~1000 | 0 | 〇 |
+| 17   | pan                          | 0.1% | $\pm 500$    | 0 | 〇 |
+| 18~20 | (未使用) | -                | - | - | - |
+| 21   | Delay Mod LFO                | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 22   | Freq Mod LFO      	      | 絶対セント        | -16000 ~ 4500 | 0      | 〇 |
+| 23   | Delay Vib LFO                | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 24   | Freq Vib LFO                 | 絶対セント        | -16000 ~ 4500 | 0      | 〇 |
+| 25   | Delay Mod Env                | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 26   | Attack Mod Env               | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 27   | Hold  Mod Env                | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 28   | Decay Mod Env                | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 29   | Sustain Mod Env              | 0.1%(減衰量)      | 0 	       | -12000 | 〇 |
+| 28   | Relase Mod Env               | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 31   | Keynum To Mod Env Hold       | タイムセント/キー | $\pm 1200$    | 0 	| 〇 | 
+| 32   | Keynum To Mod Env Decay      | タイムセント/キー | $\pm 1200$    | 0	| 〇 | 
+| 33   | Delay Vol Env 	   	      | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 34   | Attack Vol Env 	      | タイムセント      | -12000 ~ 8000 | -12000 | 〇 |
+| 35   | Hold Vol Env		      | タイムセント      | -12000 ~ 5000 | -12000 | 〇 |
+| 36   | Decay Vol Env 		      | タイムセント      | -12000 ~ 8000 | -12000 | 〇 |
+| 37   | Sustain Vol Env 	      | cB(減衰量)        | 0 ~ 14400     | 0 	| 〇 |
+| 38   | Relase Vol Env 	      | タイムセント      | -12000 ~ 8000 | -12000 | 〇 |
+| 39   | Keynum To Vol Env Hold       | タイムセント/キー | $\pm 1200$    | 0 	| 〇 | 
+| 40   | Keynum To Vol Env Decay      | タイムセント/キー | $\pm 1200$    | 0 	| 〇 | 
+| 41   | Instrument                   | インデックス      | -             | - 	| 〇 | 
+| 42   | (予約)                       | -                 | -             | -      | -  |
+| 43   | Key Range                    | キー番号(最大/最小) | -           | -      | 〇 |
+| 44   | Vel Range                    | べロシティ(最大/最小) | -         | -      | 〇 |
+| 45   | Start Loop Address Coarse Offset | 32768サンプル | $\pm$      | 0      | ×  |
+| 46   | Key Num                      | キー番号          | 0 ~ 127       | -1(無効) | 〇 |
+| 47   | Velocity                     | ベロシティ        | 0 ~ 127       | -1(無効) | 〇 |
+| 48   | Initial Attenation           | cB                | 0 ~ 14440     | 0      | 〇 |
+| 49   | (予約)                       | -                 | -             | -      | -  |
+| 50   | End Loop Address Coarse Offset | 32768サンプル   | $\pm$      | 0      | ×  |
+| 51   | Corase Tune                  | 半音              | $\pm 120$     | 0      | 〇 |
+| 52   | Fine Tune                    | セント            | $\pm 99$      | 0      | 〇 |
+| 53   | Sample ID                    | インデックス      | -             | -      | 〇 |
+| 54   | Sample Mode                  | ビットフラグ      | -             | 0      | 〇 |
+| 55   | (予約)                       | -                 | -             | -      | -  |
+| 56   | Scale Tuning                 | セント/キー       | 0 ~ 1200      | 100    | 〇 |
+| 57   | Exclusive Class              | クラス番号        | 1 ~ 127       | 0(無効) | × |
+| 58   | Overriding Root Key          | キー番号          | 0 ~ 127       | -1(無効) | 〇 )
 
 ## 使用素材
 ### MIDI
