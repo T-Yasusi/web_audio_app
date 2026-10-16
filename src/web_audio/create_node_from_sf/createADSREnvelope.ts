@@ -1,5 +1,5 @@
-const ATTEN_SCALE = 0.4;   // init_attenuation の係数(FluidSynth 互換。仕様の本文どおりなら 1.0)
-const timecents = (tc: number) => 2 ** (tc / 1200);
+import { ATTEN_SCALE } from '../global_vals.ts'
+import { timecents } from '../util_funcs.ts'
 
 export default function createADSREnvelope(context: AudioContext, t0: number, vel: number, duration: number, p: Record<string, number>) {
     const base = 10 ** (-(p.init_attenuation * ATTEN_SCALE) / 200) * (vel / 127) ** 2;

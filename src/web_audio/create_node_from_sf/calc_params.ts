@@ -38,6 +38,7 @@ const GEN: Record<string, [number, number, number]> = {
     keynum_to_vol_env_decay: [0, -1200, 1200],
     keynum_to_mod_env_hold:  [0, -1200, 1200],
     keynum_to_mod_env_decay: [0, -1200, 1200],
+    reverb_effect_send:      [0, 0, 1000],
 };
 const GEN_ENTRIES = Object.entries(GEN);
 

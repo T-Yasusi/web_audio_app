@@ -6,10 +6,11 @@ import create_filter_panner from './create_node_from_sf/create_filter_panner.ts'
 import attach_modulation from './create_node_from_sf/attach_modulation.ts'
 
 import type { Channel } from './channel.ts'
-
+import { REVERB_CC_MAX } from './global_vals.ts'
 
 export default function create_node_from_sf(context: AudioContext, note: number, vel: number,
                                             start_time: number, duration: number, preset: any, channel: Channel,
+					    reverb: any,
 					    opts: { release_scale?: number; soft?: boolean } = {}) {
     const merger = context.createGain();
     let active = 0;   // 鳴っているボイスの数
@@ -36,13 +37,22 @@ export default function create_node_from_sf(context: AudioContext, note: number,
             channel.bend.connect(source.detune);     // ← 追加: ピッチベンド
             channel.pan.connect(panner.pan);         // ← 追加: CC10
 
-            const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;	    
+            const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
             const extra = attach_modulation(context, p, start_time, duration, end_time,
-                                            { detune: source.detune, cutoff: filter.detune, trem });
-	    
+                                            { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib });
+
+	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
+		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
+		const send = context.createGain();
+		send.gain.value = send_gen;
+		panner.connect(send);
+		send.connect(reverb.input);
+		reverb.output.connect(merger);
+	    }
+
 	    let tail: AudioNode = amp;
             if( trem ){ amp.connect(trem); tail = trem; }
-	    
+		
             active++;
             source.onended = () => {
                 source.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
