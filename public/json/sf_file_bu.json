@@ -1,0 +1,12 @@
+[
+    {
+        "path": "soundfont/GeneralUser-GS.sf2",
+        "licence": "CC0",
+	"url": "https://github.com/mrbumpy409/GeneralUser-GS"
+    },
+    {
+        "path": "soundfont/FluidR3.sf3",
+	"licence": "MIT",
+	"url": "https://github.com/Jacalz/fluid-soundfont"
+    }
+]

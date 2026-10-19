@@ -1,0 +1,9 @@
+:root {
+}
+
+header { text-align: center; }
+
+td { text-align: center; }
+#sf_table > table {
+    width: 100%;	
+}

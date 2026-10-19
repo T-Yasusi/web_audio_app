@@ -1,0 +1,17 @@
+[
+    {
+        "path": "soundfont/GeneralUser-GS.sf2",
+        "licence": "CC0",
+        "url": "https://github.com/mrbumpy409/GeneralUser-GS"
+    },
+    {
+        "path": "soundfont/FluidR3_GM.sf2",
+        "licence": "MIT",
+        "url": "https://github.com/Jacalz/fluid-soundfont"
+    },
+    {
+        "path": "soundfont/MuseScore_General.sf2",
+        "licence": "MIT",
+	"url": "https://musescore.com/"
+    }
+]
