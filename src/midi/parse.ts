@@ -1,10 +1,18 @@
+import type { Event } from './types.ts'
 import readVLQ from './readVLQ.ts'
 import readEvent from './readEvent.ts'
+
+export type MidiInfo = {
+    format: number;
+    ntrack: number;
+    division: number;
+    tracks: Array<Array<Event>>;
+}
 
 const ascii = (b: Uint8Array, pos: number) =>
     String.fromCharCode(b[pos], b[pos+1], b[pos+2], b[pos+3]);
 
-export default function parseMidi(buffer: Uint8Array) {
+export default function parseMidi(buffer: Uint8Array) : MidiInfo {
     if( buffer.length < 14 || ascii(buffer, 0) !== 'MThd' ) throw new Error('MIDIファイルではありません');
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 
@@ -18,7 +26,7 @@ export default function parseMidi(buffer: Uint8Array) {
     if( format === 0 && ntrack !== 1 ) throw new Error('フォーマット0のトラック数は1であるべきです');
     if( (division & 0x8000) !== 0 ) throw new Error('SMPTEモードはサポートしていません');
 
-    const tracks = [];
+    const tracks = new Array<Array<Event>>();
     let pos = 8 + header_len;   // ヘッダが6より長ければ読み飛ばす
 
     while( tracks.length < ntrack ){
@@ -31,7 +39,7 @@ export default function parseMidi(buffer: Uint8Array) {
         if( id !== 'MTrk' ){ pos = end; continue; }   // 未知のチャンクは読み飛ばす
 
         pos += 8;
-        const track = [];
+        const track = new Array<Event>();
         let absoluteTick = 0;
 	let status = 0;
         while( pos < end ){

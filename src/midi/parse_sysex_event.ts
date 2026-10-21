@@ -1,13 +1,21 @@
+import type { SysExEvent } from './types.ts'
 import readVLQ from './readVLQ.ts'
 
-type MidiObj = Record<string, any>;
+// type SysExEvent = {
+//     event: string;
+//     type: string;
+//     tick: number;
+//     data: Uint8Array;
+// }
 
-export default function parse_sysex_event(view: DataView, byte: number, offset: number, obj: MidiObj) {
+export default function parse_sysex_event(view: DataView, byte: number, offset: number, tick: number) {
     const len = readVLQ(view, offset);
     const end = len.offset + len.value;
     if( end > view.byteLength ) throw new Error('MIDI: SysExの長さがファイルを超えています');
-    obj.event = 'SysEx';
-    obj.type = byte;
-    obj.data = new Uint8Array(view.buffer, view.byteOffset + len.offset, len.value);
-    return { obj, offset: end };
+    
+    const event : SysExEvent = { event: 'SysEx',
+				 type: byte.toString(),
+				 tick: tick,
+				 data: new Uint8Array(view.buffer, view.byteOffset + len.offset, len.value) };
+    return { obj: event, offset: end };
 }

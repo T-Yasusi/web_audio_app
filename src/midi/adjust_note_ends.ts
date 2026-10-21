@@ -1,8 +1,10 @@
+import type { Event, Note, MidiEvent } from './types.ts'
+
 const ON = 64;                // これ以上でペダルがオン
 const HALF_PEDAL_RELEASE = 6; // ハーフペダルが63のときの、リリースの最大倍率(近似)
 
 // events: パース直後の全イベント。notes: ノートオブジェクトの配列(その場で書き換える)
-export default function adjust_note_ends(events: any[], notes: any[]) {
+export default function adjust_note_ends(events: Event[], notes: Event[]) {
     const last_tick = events.reduce((m, e) => Math.max(m, e.tick), 0);
     const controls = events.filter(e => e.type === 'controlChange').sort((a, b) => a.tick - b.tick);
 
@@ -15,40 +17,40 @@ export default function adjust_note_ends(events: any[], notes: any[]) {
 
     for( const note of notes ){
         if( note.type !== 'note' ) continue;
-        const ch = note.channel;
-        note.off_tick = note.endTick;   // 鍵を離した位置(元の値)
+        const ch = (note as Note).channel;
+        (note as Note).off_tick = (note as Note).endTick;   // 鍵を離した位置(元の値)
 
-        cut(note, note_off[ch]);        // CC123: 鍵が押されているノートを離す
+        cut(note as Note, note_off[ch]);        // CC123: 鍵が押されているノートを離す
 
         // CC64(ダンパー)と CC66(ソステヌート)による延長。連鎖するので、変わらなくなるまで繰り返す
         for(;;){
-            let end = note.endTick;
+            let end = (note as Note).endTick;
             const d = in_interval(damper[ch], end);
             if( d ) end = Math.max(end, d[1]);
             for( const [down, up] of sostenuto[ch] )
                 if( note.tick <= down && down < end ) end = Math.max(end, up);   // 踏んだ時点で鳴っていたノートだけ
-            if( end === note.endTick ) break;
-            note.endTick = end;
+            if( end === (note as Note).endTick ) break;
+            (note as Note).endTick = end;
         }
 
-        const before = note.endTick;
-        cut(note, sound_off[ch]);       // CC120: 全音停止はペダルでも止まらない
-        if( note.endTick === before ){
+        const before = (note as Note).endTick;
+        cut(note as Note, sound_off[ch]);       // CC120: 全音停止はペダルでも止まらない
+        if( (note as Note).endTick === before ){
             // ハーフペダル: 離す瞬間のペダル値が 1〜63 なら、リリースを長くする
-            const v = value_at(damper_values[ch], note.endTick);
-            if( v > 0 && v < ON ) note.release_scale = 1 + (v / ON) * (HALF_PEDAL_RELEASE - 1);
+            const v = value_at(damper_values[ch], (note as Note).endTick);
+            if( v > 0 && v < ON ) (note as Note).release_scale = 1 + (v / ON) * (HALF_PEDAL_RELEASE - 1);
         }
         // CC67: 鳴らし始めの時点でソフトペダルが踏まれていたノート
-        if( in_interval(soft[ch], note.tick) ) note.soft = true;
+        if( in_interval(soft[ch], note.tick) ) (note as Note).soft = true;
     }
 }
 
 // チャンネルごとの、ペダル cc がオンの区間 [踏む, 離す)。CC121(リセット)でも戻る
-function pedal_intervals(controls: any[], cc: number, last_tick: number) {
+function pedal_intervals(controls: Event[], cc: number, last_tick: number) {
     const result: [number, number][][] = Array.from({ length: 16 }, () => []);
     const down_at: (number | null)[] = new Array(16).fill(null);
     for( const e of controls ){
-        const ch = e.channel, [num, value] = e.data;
+        const ch = (e as MidiEvent).channel, [num, value] = (e as MidiEvent).data as [ number, number];
         if( num !== cc && num !== 121 ) continue;
         const on = num === cc && value >= ON;
         if( on && down_at[ch] === null ) down_at[ch] = e.tick;
@@ -64,24 +66,24 @@ function pedal_intervals(controls: any[], cc: number, last_tick: number) {
 }
 
 // チャンネルごとの、ペダル cc の [tick, 値] の列。CC121 は値0
-function pedal_values(controls: any[], cc: number) {
+function pedal_values(controls: Event[], cc: number) {
     const result: [number, number][][] = Array.from({ length: 16 }, () => []);
     for( const e of controls ){
-        const [num, value] = e.data;
-        if( num === cc ) result[e.channel].push([e.tick, value]);
-        else if( num === 121 ) result[e.channel].push([e.tick, 0]);
+        const [num, value] = (e as MidiEvent).data as [number, number];
+        if( num === cc ) result[(e as MidiEvent).channel].push([e.tick, value]);
+        else if( num === 121 ) result[(e as MidiEvent).channel].push([e.tick, 0]);
     }
     return result;
 }
 
-const ticks_of = (controls: any[], cc: number) => {
+const ticks_of = (controls: Event[], cc: number) => {
     const r: number[][] = Array.from({ length: 16 }, () => []);
-    for( const e of controls ) if( e.data[0] === cc ) r[e.channel].push(e.tick);
+    for( const e of controls ) if( (e as MidiEvent).data as [ number, number][0] === cc ) r[(e as MidiEvent).channel].push(e.tick);
     return r;
 };
 
 // ノートの鳴っている間(開始より後、終了より前)の tick で、終了を縮める
-const cut = (note: any, ticks: number[]) => {
+const cut = (note: Note, ticks: number[]) => {
     for( const t of ticks ) if( note.tick < t && t < note.endTick ) note.endTick = t;
 };
 

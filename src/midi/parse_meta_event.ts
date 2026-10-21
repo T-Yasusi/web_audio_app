@@ -1,6 +1,5 @@
+import type { MetaEvent } from './types.ts'
 import readVLQ from './readVLQ.ts'
-
-type MidiObj = Record<string, any>;
 
 const META_TYPES: Record<number, string> = {
     0x00: 'Sequence Number', 0x01: 'Text Event', 0x02: 'Copyright Notice', 0x03: 'Track Name',
@@ -12,36 +11,47 @@ const META_TYPES: Record<number, string> = {
 // 長さが固定のメタイベント
 const META_LENGTH: Record<number, number> = { 0x20: 1, 0x21: 1, 0x2f: 0, 0x51: 3, 0x54: 5, 0x58: 4, 0x59: 2 };
 
-export default function parse_meta_event(view: DataView, offset: number, obj: MidiObj) {
+// export type MetaEvent = {
+//     event: string;
+//     type: string;
+//     tick: number;
+//     id: number;
+//     data: number |
+// 	{ hr: number, mn: number, se: number, fr: number, ff: number } |
+// 	{ nn: number, dd: number, cc: number, bb: number } |
+// 	{ sf: number, minor: boolean } |
+// 	Uint8Array | 
+// 	string | undefined
+// };
+
+export default function parse_meta_event(view: DataView, offset: number, tick: number) {
     const id = view.getUint8(offset++);
     const len = readVLQ(view, offset);
     const start = len.offset;
     const end = start + len.value;
     if( end > view.byteLength ) throw new Error('MIDI: メタイベントの長さがファイルを超えています');
 
-    obj.event = 'Meta';
-    obj.id = id;
-    obj.type = META_TYPES[id] ?? 'Unknown';
-
     const expected = META_LENGTH[id];
     if( expected !== undefined && len.value !== expected )
-        throw new Error(`MIDI: ${obj.type} の長さが不正です: ${len.value}`);
+        throw new Error(`MIDI: ${META_LENGTH[id]} の長さが不正です: ${len.value}`);
 
     const u8 = (i: number) => view.getUint8(start + i);
 
+    let data;
     if( id === 0x00 ){
-        if( len.value === 2 ) obj.data = view.getUint16(start, false);   // 長さ0も許される
+        if( len.value === 2 ) data = view.getUint16(start, false);   // 長さ0も許される
     }
-    else if( id === 0x20 || id === 0x21 ) obj.data = u8(0);
+    else if( id === 0x20 || id === 0x21 ) data = u8(0);
     else if( id === 0x2f ) { /* データなし */ }
-    else if( id === 0x51 ) obj.data = (u8(0) << 16) | (u8(1) << 8) | u8(2);   // 四分音符あたりのマイクロ秒
-    else if( id === 0x54 ) obj.data = { hr: u8(0), mn: u8(1), se: u8(2), fr: u8(3), ff: u8(4) };
-    else if( id === 0x58 ) obj.data = { nn: u8(0), dd: u8(1), cc: u8(2), bb: u8(3) };
-    else if( id === 0x59 ) obj.data = { sf: view.getInt8(start), minor: u8(1) === 1 };
+    else if( id === 0x51 ) data = (u8(0) << 16) | (u8(1) << 8) | u8(2);   // 四分音符あたりのマイクロ秒
+    else if( id === 0x54 ) data = { hr: u8(0), mn: u8(1), se: u8(2), fr: u8(3), ff: u8(4) };
+    else if( id === 0x58 ) data = { nn: u8(0), dd: u8(1), cc: u8(2), bb: u8(3) };
+    else if( id === 0x59 ) data = { sf: view.getInt8(start), minor: u8(1) === 1 };
     else{
         const bytes = new Uint8Array(view.buffer, view.byteOffset + start, len.value);
         // 0x01〜0x09 はテキスト。それ以外(0x7f を含む)はバイナリのまま持つ
-        obj.data = (id >= 0x01 && id <= 0x09) ? new TextDecoder().decode(bytes) : bytes;
+        data = (id >= 0x01 && id <= 0x09) ? new TextDecoder().decode(bytes) : bytes;
     }
-    return { obj, offset: end };
+    const event : MetaEvent = { event: 'Meta', id: id, tick: tick, type: META_TYPES[id] ?? 'Unknown', data: data };
+    return { obj: event, offset: end };
 }
