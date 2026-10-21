@@ -35,8 +35,8 @@ export default function create_node_from_sf(context: AudioContext, note: number,
             channel.pan.connect(panner.pan);         // ← 追加: CC10
 
             const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
-            attach_modulation(context, p, start_time, duration, end_time,
-                              { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib });
+            const nodes = attach_modulation(context, p, start_time, duration, end_time,
+					    { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib });
 
 	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
 		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
@@ -55,15 +55,15 @@ export default function create_node_from_sf(context: AudioContext, note: number,
 		send.connect(chorus.input);
 		chorus.output.connect(merger);
 	    }
-	    	    
-//	    let tail: AudioNode = amp;
-//            if( trem ){ amp.connect(trem); tail = trem; }
-		
+	    	    		
             active++;
             source.onended = () => {
                 source.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
-                if( --active === 0 ) merger.disconnect();
-            };
+                if( --active === 0 ){
+		    merger.disconnect();
+		    nodes.forEach(a => a.disconnect());
+		}
+	    };
             source.start(start_time);
             source.stop(end_time);   // 実時間で止める(start の第3引数は使わない)
         }

@@ -19,8 +19,7 @@ class MIDIPlayer{
     program = new Array(16).fill(0);
     bank =  new Array(16).fill(0);
     channels: Array<Channel>;
-    index = 0;
-    time = 0;
+
     constructor(context: AudioContext, gain: AudioNode, sf_json: any, midi_json: any){
 	this.context = context;
 	this.base_time = context.currentTime;
@@ -54,7 +53,6 @@ class MIDIPlayer{
                                              { release_scale: event.release_scale, soft: event.soft });
 
             gain.connect(this.channels[event.channel].input);
-//	    console.log(preset, stop, gain);
 	}
 	else if( event.type === 'programChange' ) this.program[event.channel] = event.data;
 	else if( event.type === 'controlChange' && event.data[0] === 0 ) this.bank[event.channel] = event.data[1];
@@ -80,11 +78,6 @@ class MIDIPlayer{
 }
 
 export default MIDIPlayer;
-
-// function update_bend(channel: Channel, time: number){
-//     const cents = channel.state.bend / 8192 * channel.state.bend_range * 100;
-//     channel.bend.offset.setTargetAtTime(cents, time, SMOOTH);
-// }
     
 function build_table(midi_json: any) {
     const { tempos, division } = midi_json;

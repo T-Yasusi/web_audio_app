@@ -1,19 +1,32 @@
 # WebAudioAPP
 ブラウザ上で動く、SF2 + SMF 再生シンセサイザー(学習用に、ほぼフルスクラッチ)
 
+## 実行環境
+
+### ブラウザで試す
+[Vite による GitHub Pages](https://t-yasusi.github.io/web_audio_app/) で、インストール不要で動作を確認できます。
+
+### ローカルで実行する
+本プロジェクトは Node.js + yarn で開発しており、フロントエンドには TypeScript ベースの Vite を使用しています。
+
+```bash
+$ yarn install      # 依存パッケージのインストール
+$ yarn run dev      # 開発サーバーの起動(ローカル実行用)
+$ yarn run build    # TypeScript のコンパイルを含むビルド
+```
 
 ## 実装済み/未実装機能
 ### MIDI
 | CC     | 名前                      | 状態 |
 |:---:   |:---:                      |:--- | 
-| 0      | バンクセレクトMSB         | 実装済み(CC32 の LSB は無視) |
+| 0      | バンクセレクトMSB         | 実装済み(CC0のLSB(CC32)は無視) |
 | 1      | モジュレーションホイール  | これから(ビブラート深さ)     |
 | 6      | データエントリー MSB      | RPN 用に実装済み             |
 | 7      | ボリューム                | 実装済み                     |
 | 10     | パン                      | 実装済み                     | 
 | 11     | エクスプレッション        | 実装済み                     |
-| 32〜63 | 0〜31 の LSB(細かい値)    | ほぼ使われない(CC32 のバンクセレクト LSB のみ GM2 で使われる) | 
 | 38     | データエントリー LSB      | RPN の細かい値(必要になったら) |
+| 32〜63 | 0〜31 の LSB(細かい値)    | ほぼ使われない(CC32 のバンクセレクト LSB のみ GM2 で使われる) | 
 | 64     | サステイン(ダンパーペダル) | 実装済み		      |
 | 66     | ソステヌート              | 実装済み			      |
 | 67     | ソフトペダル              | 実装済み			      |
@@ -27,15 +40,15 @@
 
 - MSB: Most Significant Byte (最上位バイト)
 - LSB: Least Significant Byte (最下位バイト)
-- RPN: Ragisterd Parameter Number (登録済みパラメーター番号)
-- NRPN: Non-Ragisterd Parameter Number (未登録済みパラメーター番号)
+- RPN: Ragistered Parameter Number (登録済みパラメーター番号)
+- NRPN: Non-Ragistered Parameter Number (未登録済みパラメーター番号)
 
-## Sound Fontジェネレーター
+## SoundFontジェネレーター
 | 番号 | 名前					| 単位                  | 範囲        | 規定値 | 実装 |
 |:---: |:---:                         		| :---                	|:---:        |:---:   |:---: | 
-| 0    | Start Addres Offset          		| サンプル     	      	| 0以上       | 0      | × | 
-| 1    | End Addres Offset            		| サンプル     	      	| 0以上       | 0      | × |
-| 2    | Start Loop Addres Offset     		| サンプル     	      	| $\pm$       | 0      | × |
+| 0    | Start Address Offset          		| サンプル     	      	| 0以上       | 0      | × | 
+| 1    | End Address Offset            		| サンプル     	      	| 0以上       | 0      | × |
+| 2    | Start Loop Address Offset     		| サンプル     	      	| $\pm$       | 0      | × |
 | 3    | End Loop Address Offset      		| サンプル     	      	| $\pm$       | 0      | × |
 | 4    | Start Address Coarse         		| 32768サンプル	      	| 0以上       | 0      | × |
 | 5    | Mod LFO To Pitch             		| セント       	      	| $\pm 12000$ | 0 | 〇 |
@@ -45,7 +58,7 @@
 | 9    | Initial Filter Q             		| cB       	      	| $0 ~ 960$ | 0 | 〇 |
 | 10   | Mod LFO To Filter Fc         		| セント       	      	| $\pm 12000$ | 0 | 〇 |
 | 11   | Mod Env To Filter Fc         		| セント       	      	| $\pm 12000$ | 0 | 〇 |
-| 12   | End Addres Coarse Offset     		| 32768サンプル	      	| 0以下  | 0      | × |
+| 12   | End Address Coarse Offset     		| 32768サンプル	      	| 0以下  | 0      | × |
 | 13   | Mod LFO To Volume            		| cB       	      	| $\pm 960$ | 0 | 〇 |
 | 14   | (未使用) | - | - | - | -     |
 | 15   | Chorus Effect Send			| 0.1%			| 0~1000        | 0 | 〇 |
@@ -60,8 +73,8 @@
 | 26   | Attack Mod Env               		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 27   | Hold  Mod Env                		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 28   | Decay Mod Env                		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
-| 29   | Sustain Mod Env              		| 0.1%(減衰量)          | 0 	        | -12000 | 〇 |
-| 28   | Relase Mod Env               		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
+| 29   | Sustain Mod Env              		| 0.1%(減衰量)          | 0-1000   	| 0 	 | 〇 |
+| 30   | Release Mod Env               		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 31   | Keynum To Mod Env Hold       		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
 | 32   | Keynum To Mod Env Decay      		| タイムセント/キー     | $\pm 1200$    | 0	| 〇 | 
 | 33   | Delay Vol Env 	   	      		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
@@ -69,7 +82,7 @@
 | 35   | Hold Vol Env		      		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 36   | Decay Vol Env 		      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 37   | Sustain Vol Env 	      		| cB(減衰量)            | 0 ~ 14400     | 0 	| 〇 |
-| 38   | Relase Vol Env 	      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
+| 38   | Release Vol Env 	      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 39   | Keynum To Vol Env Hold       		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
 | 40   | Keynum To Vol Env Decay      		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
 | 41   | Instrument                   		| インデックス          | -             | - 	| 〇 | 
@@ -79,10 +92,10 @@
 | 45   | Start Loop Address Coarse Offset 	| 32768サンプル         | $\pm$       	| 0      | ×  |
 | 46   | Key Num                          	| キー番号              | 0 ~ 127       | -1(無効) | 〇 |
 | 47   | Velocity                     	  	| ベロシティ            | 0 ~ 127       | -1(無効) | 〇 |
-| 48   | Initial Attenation           	  	| cB                    | 0 ~ 14440     | 0      | 〇 |
+| 48   | Initial Attenuation           	  	| cB                    | 0 ~ 14400     | 0      | 〇 |
 | 49   | (予約)                       	  	| -                     | -             | -      | -  |
 | 50   | End Loop Address Coarse Offset   	| 32768サンプル         | $\pm$ 	| 0      | ×  |
-| 51   | Corase Tune                      	| 半音                  | $\pm 120$     | 0      | 〇 |
+| 51   | Coarase Tune                      	| 半音                  | $\pm 120$     | 0      | 〇 |
 | 52   | Fine Tune                    	  	| セント                | $\pm 99$      | 0      | 〇 |
 | 53   | Sample ID                    	  	| インデックス          | -             | -      | 〇 |
 | 54   | Sample Mode                  	  	| ビットフラグ          | -             | 0      | 〇 |
@@ -96,18 +109,21 @@
 
 | 名前                         | 作者                 | ライセンス    | 同梱 | URL |
 |:---                          |:---                  |:---:          |:---: |:--- |
-| 交響曲第7番イ長調            | ベートヴェン         | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
+| 交響曲第7番イ長調            | ベートーヴェン       | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 | エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 | パイナップル・ラグ           | スコット・ジョプリン | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 | ポッサムとポッターズ         | チャールズ・ハンター | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 | トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
 
-### Sound Font
+### SoundFont
 | 名前               | 作者                 | ライセンス    | 同梱 | URL |
 |:---                |:---                  |:---:          |:---: |:--- |
 | GeneralUser-GS.sf2 | [S. Christian Collins](https://github.com/mrbumpy409) | Original | 〇 | [Github](https://github.com/mrbumpy409/GeneralUser-GS) |
-| FluidR3_GM.sf2     | Frank Wen            | MIT           | 〇   | [Github](https://github.com/Jacalz/fluid-soundfont) |
-| MuseScore_General.sf2 | Frank Wen, Michael Cowgill, S. Christian Collins | MIT | 〇   | [MuseScore](https://musescore.com/) | 
+| FluidR3_GM.sf2     | Frank Wen            | MIT           | ×   | [Github](https://github.com/Jacalz/fluid-soundfont) |
+| MuseScore_General.sf2 | Frank Wen, Michael Cowgill, S. Christian Collins | MIT | ×   | [MuseScore](https://musescore.com/) |
+
+下二つはファイルサイズが大きいため同梱はしない。
+
 ## ライセンス
 このリポジトリはMITライセンスで公開しています。
 詳しくは[こちら](./LICENSE)を参照してください。

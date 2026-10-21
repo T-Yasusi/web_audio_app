@@ -4,14 +4,12 @@ import { sf_files } from './../global_vals.ts'
 
 const select = document.getElementById('sf_file');
 for( const [i, sf_file] of sf_files.entries() ){
-    console.log(sf_file);
     const response = await fetch(sf_file.path);
     const buffer = await response.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const riff = read_riff(bytes);
     const sf_data = parseSF(riff);
     
-    console.log(sf_data.info);
     sf_file.data = sf_data;
     const option = document.createElement('option');
     option.id = "sf_"+i;

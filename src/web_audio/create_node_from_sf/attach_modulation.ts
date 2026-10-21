@@ -45,21 +45,16 @@ export default function attach_modulation(context: AudioContext, p: Record<strin
     }
 
     if( p.vib_lfo_to_pitch !== 0 || target.vib_depth ){
-//	console.log(target.vib_depth);
-//	throw new Error('tmp');
 	const lfo = make_lfo(context, t0, t_end, p.delay_vib_lfo, p.freq_vib_lfo);
 	nodes.push(lfo);
 	if( p.vib_lfo_to_pitch !== 0 ) route(lfo, p.vib_lfo_to_pitch, target.detune);
 	if( target.vib_depth ){
-//	    console.log('Call Vibrate Depth');
             const g = context.createGain();
             g.gain.value = 0;                  // 実効ゲイン = チャンネルの深さ(セント)
             target.vib_depth.connect(g.gain);  // 深さを、ゲインに信号として足す
             lfo.connect(g);
             g.connect(target.detune);
             nodes.push(g);
-//	    g.gain.onended = ()=> { console.log('Call onended'); }
-//            cleanups.push(() => target.vib_depth!.disconnect(g.gain));
 	}
     }
     

@@ -13,12 +13,10 @@ export default async function play_midi(midi_json: any, sf_json: any) {
     const player = new MIDIPlayer(context, master_gain, sf_json, midi_json);
     let index = 0;
     let base_time = context.currentTime + LEAD;
-//    console.log(base_time);
    
     function scheduling() {
         const song_now = context.currentTime - base_time;   // 曲の何秒目か
         const horizon = song_now + LOOKAHEAD;
-	console.log('song now : ', song_now);
 	
         while( index < player.events.length ){
             const event = player.events[index];
@@ -32,6 +30,4 @@ export default async function play_midi(midi_json: any, sf_json: any) {
     }
 
     const timer = setInterval(scheduling, INTERVAL);
-
-//    return { stop: () => { clearInterval(timer); channels.forEach(dispose_channel); } }   // 発音中のノートを止める処理は、別途必要
 }
