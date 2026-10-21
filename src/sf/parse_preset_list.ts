@@ -1,8 +1,20 @@
+import type { RiffChunk } from '../read_riff.ts'
 import { getString, getWord, getDword } from './get_xxx.ts'
 
 const PHDR_SIZE = 38;
 
-export default function parse_preset_list(phdr: any) {
+export type PresetInfo = {
+    name: string;
+    MIDInumber: number;
+    bank: number;
+    bag_start: number;
+    bag_end: number;
+    library: number;
+    genre: number;
+    morphology: number;
+};
+
+export default function parse_preset_list(phdr: RiffChunk) : PresetInfo[] {
     const rec = phdr.data;
     if( rec.length < PHDR_SIZE || rec.length % PHDR_SIZE !== 0 )
         throw new Error(`phdrチャンクのサイズが不正です: ${rec.length}`);

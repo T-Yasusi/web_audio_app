@@ -1,26 +1,34 @@
 const latin1 = new TextDecoder('latin1');
 
-export function getString(array: any, start: number, end: number){
+export function getString(array: Uint8Array, start: number, end: number){
     const bytes = array.subarray(start, end);
     const nul = bytes.indexOf(0);
     return latin1.decode(nul < 0 ? bytes : bytes.subarray(0, nul));  // 最初のNULまで
 }
 
-export function getDword(array: any, i: number){ return array[i]+256*array[i+1]+256*256*array[i+2]+256*256*256*array[i+3]; }
-export function getWord(array: any, i: number){ return array[i]+256*array[i+1]; }
-export function getChar(array: any, i: number){ return (array[i] << 24) >> 24; }   // 符号付き8bit
-export function getShort(array:any , i: number){ return ((array[i] | (array[i+1] << 8)) << 16) >> 16; }  // 符号付き16bit(リトルエンディアン)
+export function getDword(array: Uint8Array, i: number){ return array[i]+256*array[i+1]+256*256*array[i+2]+256*256*256*array[i+3]; }
+export function getWord(array: Uint8Array, i: number){ return array[i]+256*array[i+1]; }
+export function getChar(array: Uint8Array, i: number){ return (array[i] << 24) >> 24; }   // 符号付き8bit
+// 符号付き16bit(リトルエンディアン)
+export function getShort(array: Uint8Array, i: number){ return ((array[i] | (array[i+1] << 8)) << 16) >> 16; } 
 
-export function getModulator(array: any){
+export type Modulator = {
+    mod_src_oper: number;
+    gen_name: string;
+    amount: number;
+    mod_amt_src_oper: number;
+    mod_trans_oper: number;
+}
+export function getModulator(array: Uint8Array){
     return { mod_src_oper: getWord(array, 0),
              gen_name: getGeneratorName(getWord(array, 2)),
-             mount: getShort(array, 4),
+             amount: getShort(array, 4),
              mod_amt_src_oper: getWord(array, 6),
              mod_trans_oper: getWord(array, 8)
            };
 };
 
-export function getGenerator(array: any){
+export function getGenerator(array: Uint8Array): { name: string, data: number | [ number, number] } {
     let name=getGeneratorName(getWord(array, 0));
     if( !name ) throw new Error("SondfFont : Generator名が見つかりませんでした");
     if( name==="sample_id" || name==="instrument" ) return { name: name, data: getWord(array, 2) };

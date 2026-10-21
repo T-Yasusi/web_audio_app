@@ -1,8 +1,15 @@
+import type { RiffChunk } from '../read_riff.ts'
 import { getString, getWord } from './get_xxx.ts'
 
 const INST_SIZE = 22; // achInstName[20] + wInstBagNdx
 
-export default function parse_inst_list(inst: any) {
+export type Inst = {
+    name: string;
+    bag_start: number;
+    bag_end: number;
+};
+
+export default function parse_inst_list(inst: RiffChunk) {
     const rec = inst.data;
     if( rec.length < INST_SIZE || rec.length % INST_SIZE !== 0 )
         throw new Error(`instチャンクのサイズが不正です: ${rec.length}`);

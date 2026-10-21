@@ -25,6 +25,6 @@ for( const [i, midi_file] of midi_files.entries() ){
 	const end = event.endTick ? calc_time(event.endTick, midi_file.data) : 0;
 	time = Math.max(start, end, time);
     }
-    (document.getElementById('duration') as HTMLInputElement).value = time;
-    (document.getElementById('n_note') as HTMLInputElement).value = events.filter(a=> a.type === 'note').length;
+    (document.getElementById('duration') as HTMLInputElement).value = String(time);
+    (document.getElementById('n_note') as HTMLInputElement).value = events.filter((a: any) => a.type === 'note').length;
 }

@@ -7,13 +7,22 @@
 [Vite による GitHub Pages](https://t-yasusi.github.io/web_audio_app/) で、インストール不要で動作を確認できます。
 
 ### ローカルで実行する
-本プロジェクトは Node.js + yarn で開発しており、フロントエンドには TypeScript ベースの Vite を使用しています。
+本プロジェクトは Node.js + yarn で開発しており、フロントエンドには TypeScript ベースの Vite を使用しています。パッケージ管理は Yarn の Plug'n'Play(PnP)方式です。
 
 ```bash
+$ corepack enable   # package.json の packageManager に従って yarn 4 を使うため(初回のみ)
 $ yarn install      # 依存パッケージのインストール
 $ yarn run dev      # 開発サーバーの起動(ローカル実行用)
 $ yarn run build    # TypeScript のコンパイルを含むビルド
 ```
+
+### 開発環境
+| ツール  | 開発時のバージョン |
+|:---     |:--- |
+| Node.js | v22.18.0 |
+| yarn    | 4.9.2 |
+
+上記のバージョンで開発・動作確認をしています。これより古いバージョンでも動く可能性はありますが、未検証です。
 
 ## 実装済み/未実装機能
 ### MIDI

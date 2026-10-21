@@ -1,3 +1,5 @@
+import type { RiffChunk } from '../read_riff.ts'
+import type { Modulator } from './get_xxx.ts'
 import { getWord, getGenerator, getModulator } from './get_xxx.ts'
 
 const BAG_SIZE = 4;   // wGenNdx, wModNdx
@@ -7,7 +9,8 @@ const MOD_SIZE = 10;
 // bag_start〜bag_end のゾーン列を読む。
 // terminal: ゾーンの終端ジェネレータ名('sample_id' か 'instrument')。
 // 戻り値の ref は、その終端ジェネレータの値(参照先の番号)。
-export default function parse_zones(label: string, bag_start: number, bag_end: number, bag: any, mod: any, gen: any, terminal: string) {
+export default function parse_zones(label: string, bag_start: number, bag_end: number,
+				    bag: RiffChunk, mod: RiffChunk, gen: RiffChunk, terminal: string) {
     // 各テーブルの末尾は終端レコード。実データの個数はそれを除いたもの
     const n_bag = bag.data.length / BAG_SIZE - 1;
     const n_gen = gen.data.length / GEN_SIZE - 1;
@@ -25,21 +28,23 @@ export default function parse_zones(label: string, bag_start: number, bag_end: n
         if( g_start > g_end || g_end > n_gen || m_start > m_end || m_end > n_mod )
             throw new Error(`${label}: gen/modのインデックスが不正です`);
 
-        const zone = { generators: {} as Record<string, any>, modulators: [] as any[] };
+	const modulators = new Array<Modulator>();
+	const generators : Record<string, number | [ number, number]> = {};
+		       
         let ref;
         for( let k=g_start; k<g_end; k++ ){
             const g = getGenerator(gen.data.subarray(GEN_SIZE*k, GEN_SIZE*(k+1)));
             if( g.name === terminal ){ ref = g.data; break; }   // 終端。以降は無視
-            if( Object.hasOwn(zone.generators, g.name) )
+            if( Object.hasOwn(generators, g.name) )
                 throw new Error(`${label}: 同じGeneratorがあります: ${g.name}`);
-            zone.generators[g.name] = g.data;
+            generators[g.name] = g.data;
         }
         for( let k=m_start; k<m_end; k++ )
-            zone.modulators.push(getModulator(mod.data.subarray(MOD_SIZE*k, MOD_SIZE*(k+1))));
+            modulators.push(getModulator(mod.data.subarray(MOD_SIZE*k, MOD_SIZE*(k+1))));
 
-        if( ref !== undefined ) zones.push({ zone, ref });
-        else if( j === bag_start ) global_zone = zone;
+        if( ref !== undefined ) zones.push({ zone: { generators, modulators }, ref });
+        else if( j === bag_start ) global_zone = { generators, modulators };
         // 先頭以外で終端ジェネレータのないゾーンは、仕様どおり無視する
     }
-    return { zones, global_zone };
+    return { zones: zones, global_zone };
 }

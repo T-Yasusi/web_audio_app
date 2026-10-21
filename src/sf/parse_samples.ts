@@ -1,16 +1,29 @@
+import type { RiffChunk, RiffList } from '../read_riff.ts'
 import { getString, getDword, getWord, getChar } from './get_xxx.ts'
 
 const SHDR_SIZE = 46;
 
-export default function parse_samples(shdr: any, sdta: any) {
-    const rec = shdr.data;
+export type Sample = {
+    name: string;
+    sample: Float32Array;
+    loop_start: number;
+    loop_end: number;
+    sampling_rate: number;
+    origin_pitch: number;
+    correction: number;
+    sample_link: number;
+    sample_type: number;
+};
+
+export default function parse_samples(shdr: RiffChunk, sdta: RiffList) : Sample[] {
+    const rec = (shdr as RiffChunk).data;
     if( rec.length % SHDR_SIZE !== 0 ) throw new Error(`shdrチャンクのサイズが不正です: ${rec.length}`);
 
-    const smpl = sdta.children.find((c: any) => c.id === 'smpl');
+    const smpl = sdta.children.find((c): c is RiffChunk => c.id === 'smpl');
     if( !smpl ) throw new Error('sdtaチャンクにsmplがありません');
-    let sm24 = sdta.children.find((c: any) => c.id === 'sm24');
-    // sm24 は1サンプル1バイト。足りなければ無視して16bitとして扱う
-    if( sm24 && sm24.children.length < smpl.children.length / 2 ) sm24 = undefined;
+    let sm24 = sdta.children.find((c): c is RiffChunk => c.id === 'sm24');
+//    sm24 は1サンプル1バイト。足りなければ無視して16bitとして扱う
+//    if( sm24 && sm24.data.length < smpl.data.length / 2 ) sm24 = null;
 
     const view = new DataView(smpl.data.buffer, smpl.data.byteOffset, smpl.data.byteLength);
 
@@ -25,7 +38,7 @@ export default function parse_samples(shdr: any, sdta: any) {
 
         samples.push({
             name,
-            sample: decode_samples(view, sm24, start, end),
+            sample: decode_samples(view, start, end, sm24),
             loop_start: getDword(rec, i+28) - start,
             loop_end: getDword(rec, i+32) - start,
             sampling_rate: getDword(rec, i+36),
@@ -38,13 +51,13 @@ export default function parse_samples(shdr: any, sdta: any) {
     return samples;
 }
 
-function decode_samples(view: DataView, sm24: any, start: number, end: number){
+function decode_samples(view: DataView, start: number, end: number, sm24?: RiffChunk){
     const n = end - start;
     const out = new Float32Array(n);
     if( sm24 ){
         for( let k=0; k<n; k++ ){
             const hi = view.getInt16(2*(start+k), true);  // 上位16bit(符号付き)
-            const lo = sm24.children[start+k];                 // 下位8bit(符号なし)
+            const lo = sm24.data[start+k];                 // 下位8bit(符号なし)
             out[k] = (hi*256 + lo) / 8388608;              // 2^23
         }
     }
