@@ -1,13 +1,6 @@
-import type { Event } from './types.ts'
+import type { Event, MidiInfo } from './types.ts'
 import readVLQ from './readVLQ.ts'
 import readEvent from './readEvent.ts'
-
-export type MidiInfo = {
-    format: number;
-    ntrack: number;
-    division: number;
-    tracks: Array<Array<Event>>;
-}
 
 const ascii = (b: Uint8Array, pos: number) =>
     String.fromCharCode(b[pos], b[pos+1], b[pos+2], b[pos+3]);

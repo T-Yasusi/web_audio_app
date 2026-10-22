@@ -1,13 +1,6 @@
 import type { SysExEvent } from './types.ts'
 import readVLQ from './readVLQ.ts'
 
-// type SysExEvent = {
-//     event: string;
-//     type: string;
-//     tick: number;
-//     data: Uint8Array;
-// }
-
 export default function parse_sysex_event(view: DataView, byte: number, offset: number, tick: number) {
     const len = readVLQ(view, offset);
     const end = len.offset + len.value;

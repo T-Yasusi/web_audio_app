@@ -1,19 +1,8 @@
+import type { Sample } from './types.ts'
 import type { RiffChunk, RiffList } from '../read_riff.ts'
 import { getString, getDword, getWord, getChar } from './get_xxx.ts'
 
 const SHDR_SIZE = 46;
-
-export type Sample = {
-    name: string;
-    sample: Float32Array;
-    loop_start: number;
-    loop_end: number;
-    sampling_rate: number;
-    origin_pitch: number;
-    correction: number;
-    sample_link: number;
-    sample_type: number;
-};
 
 export default function parse_samples(shdr: RiffChunk, sdta: RiffList) : Sample[] {
     const rec = (shdr as RiffChunk).data;

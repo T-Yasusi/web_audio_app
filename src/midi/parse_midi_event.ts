@@ -5,14 +5,6 @@ const MIDI_TYPES: Record<number, string> = {
     0xC: 'programChange', 0xD: 'channelPressure', 0xE: 'pitchBend',
 };
 
-// export type MidiEvent = {
-//     event: string;
-//     type: string;
-//     tick: number;
-//     channel: number;
-//     data: number | [ number, number ];
-// };
-
 export default function parse_midi_event(view: DataView, status: number, offset: number, tick: number) {
     const type = status >> 4;
 

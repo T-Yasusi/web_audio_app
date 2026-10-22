@@ -1,15 +1,8 @@
-import type { MidiInfo } from './parse.ts'
+import type { MidiInfo, MidiFile } from './types.ts'
 import type { Event, MidiEvent, Note } from './types.ts'
 import adjust_note_ends from './adjust_note_ends.ts'
 
 const DEFAULT_TEMPO = 500000;   // 120BPM (SMFの既定値)
-
-export type MidiFile = {
-    format: number;
-    division: number;
-    tempos: Event[];
-    tracks: Array<Array<Event>>;
-}
 
 export default function build_song(json: MidiInfo) : MidiFile{
     if( json.format === 2 ) throw new Error('フォーマット2はサポートしていません');

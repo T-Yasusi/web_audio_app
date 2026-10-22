@@ -1,3 +1,17 @@
+export type MidiInfo = {
+    format: number;
+    ntrack: number;
+    division: number;
+    tracks: Array<Array<Event>>;
+}
+
+export type MidiFile = {
+    format: number;
+    division: number;
+    tempos: Event[];
+    tracks: Array<Array<Event>>;
+}
+
 export type MidiEvent = {
     event: string;
     type: string;

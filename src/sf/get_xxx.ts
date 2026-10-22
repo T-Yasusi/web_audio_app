@@ -12,13 +12,6 @@ export function getChar(array: Uint8Array, i: number){ return (array[i] << 24) >
 // 符号付き16bit(リトルエンディアン)
 export function getShort(array: Uint8Array, i: number){ return ((array[i] | (array[i+1] << 8)) << 16) >> 16; } 
 
-export type Modulator = {
-    mod_src_oper: number;
-    gen_name: string;
-    amount: number;
-    mod_amt_src_oper: number;
-    mod_trans_oper: number;
-}
 export function getModulator(array: Uint8Array){
     return { mod_src_oper: getWord(array, 0),
              gen_name: getGeneratorName(getWord(array, 2)),

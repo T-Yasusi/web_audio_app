@@ -1,5 +1,5 @@
+import type { Modulator } from './types.ts'
 import type { RiffChunk } from '../read_riff.ts'
-import type { Modulator } from './get_xxx.ts'
 import { getWord, getGenerator, getModulator } from './get_xxx.ts'
 
 const BAG_SIZE = 4;   // wGenNdx, wModNdx

@@ -11,19 +11,6 @@ const META_TYPES: Record<number, string> = {
 // 長さが固定のメタイベント
 const META_LENGTH: Record<number, number> = { 0x20: 1, 0x21: 1, 0x2f: 0, 0x51: 3, 0x54: 5, 0x58: 4, 0x59: 2 };
 
-// export type MetaEvent = {
-//     event: string;
-//     type: string;
-//     tick: number;
-//     id: number;
-//     data: number |
-// 	{ hr: number, mn: number, se: number, fr: number, ff: number } |
-// 	{ nn: number, dd: number, cc: number, bb: number } |
-// 	{ sf: number, minor: boolean } |
-// 	Uint8Array | 
-// 	string | undefined
-// };
-
 export default function parse_meta_event(view: DataView, offset: number, tick: number) {
     const id = view.getUint8(offset++);
     const len = readVLQ(view, offset);
