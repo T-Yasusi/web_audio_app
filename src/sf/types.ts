@@ -1,3 +1,10 @@
+export type SFFile = {
+    info: SFInfo;
+    presets: Preset[];
+}
+
+export type SFInfo = Record<string, string | { major: number, minor: number }>;
+
 export type Sample = {
     name: string;
     sample: Float32Array;

@@ -39,5 +39,6 @@ export default function parse_sf2(riff: RiffList) {
     const preset_list = parse_preset_list(chunk('phdr') as RiffChunk);
     const presets = parse_presets(preset_list, chunk('pbag') as RiffChunk, chunk('pmod') as RiffChunk, chunk('pgen') as RiffChunk, insts);
 
+
     return { info, presets };
 }

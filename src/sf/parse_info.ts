@@ -1,3 +1,4 @@
+import type { SFInfo } from './types.ts'
 import type { RiffChunk, RiffList } from '../read_riff.ts'
 
 const STRING_FIELDS: Record<string, string> = {
@@ -29,7 +30,7 @@ function read_version(bytes: Uint8Array, id: string) {
 }
 		   
 export default function parse_info(list: RiffList) {
-    const info = {} as Record<string, string | { major: number, minor: number }>;
+    const info : SFInfo= {};
     for( const chunk of list.children ){
         if( chunk.id === 'ifil' ) info.sf_version = read_version(chunk.data, 'ifil');
         else if( chunk.id === 'iver' ) info.rom_version = read_version(chunk.data, 'iver');

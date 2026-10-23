@@ -2,17 +2,25 @@
 import { SMOOTH } from './global_vals.ts'
 import { concave } from './util_funcs.ts'
 
+export type ChannelState = {
+    volume: number;
+    expression: number;
+    bend: number;
+    bend_range: number;
+    rpn_msb: number;
+    rpn_lsb: number;
+    mod: number;
+    pressure: number;
+    reverb: number;
+    chorus: number;
+}
+
 class Channel{
     input: GainNode;
     pan: ConstantSourceNode;
     bend: ConstantSourceNode;
     vib: ConstantSourceNode;
-    state: { volume: number, expression: number,
-	     bend: number, bend_range: number, rpn_msb: number, rpn_lsb: number,
-	     mod: number,
-	     pressure: number,
-	     reverb: number,
-	     chorus: number }
+    state: ChannelState;
 
     constructor(context: AudioContext, output: AudioNode){
 	this.input = context.createGain();

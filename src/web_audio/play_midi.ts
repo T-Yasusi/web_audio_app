@@ -1,3 +1,5 @@
+import type { MidiFile } from '../midi/types.ts'
+import type { SFFile } from '../sf/types.ts'
 import context from './context.ts'
 import master_gain from './master_gain.ts'
 import calc_time from './calc_time.ts'
@@ -7,10 +9,10 @@ const LOOKAHEAD = 1.1;   // 先読みする秒数
 const INTERVAL = 1000;   // タイマーの間隔(ms)。先読みより短くする
 const LEAD = 0.05;
 
-export default async function play_midi(midi_json: any, sf_json: any) {
+export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
     await context.resume();                         // 先に再開してから時刻を読む
     
-    const player = new MIDIPlayer(context, master_gain, sf_json, midi_json);
+    const player = new MIDIPlayer(context, master_gain, sf_json.presets, midi_json);
     let index = 0;
     let base_time = context.currentTime + LEAD;
    

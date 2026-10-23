@@ -5,12 +5,15 @@ import create_buffer_source from './create_node_from_sf/create_buffer_source.ts'
 import create_filter_panner from './create_node_from_sf/create_filter_panner.ts'
 import attach_modulation from './create_node_from_sf/attach_modulation.ts'
 
+import type { Preset } from '../sf/types.ts'
 import Channel from './Channel.ts'
+import Reverb from './Reverb.ts'
+import Chorus from './Chorus.ts'
 import { REVERB_CC_MAX, CHORUS_CC_MAX } from './global_vals.ts'
 
 export default function create_node_from_sf(context: AudioContext, note: number, vel: number,
-                                            start_time: number, duration: number, preset: any, channel: Channel,
-					    reverb: any, chorus: any,
+                                            start_time: number, duration: number, preset: Preset, channel: Channel,
+					    reverb: Reverb, chorus: Chorus,
 					    opts: { release_scale?: number; soft?: boolean } = {}) {
     const merger = context.createGain();
     let active = 0;   // 鳴っているボイスの数
@@ -18,10 +21,12 @@ export default function create_node_from_sf(context: AudioContext, note: number,
     for( const pz of preset.zones ){
         if( !is_match_zone(note, vel, pz) ) continue;
         const inst = pz.instrument;
+	if( !inst ) continue;
         for( const iz of inst.zones ){
             if( !is_match_zone(note, vel, iz) ) continue;
 
-            const p = calc_params(iz, inst, pz, preset, note, opts);	    
+            const p = calc_params(iz, inst, pz, preset, note, opts);
+	    if( !iz.sample ) continue;
             const source = create_buffer_source(context, note, iz.sample, iz, inst, p);
 
             const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);

@@ -1,4 +1,4 @@
-// const ATTEN_SCALE = 0.4;   // init_attenuation の係数(FluidSynth 互換。仕様の本文どおりなら 1.0)
+import type { InstZone, Instrument, Preset, PresetZone } from '../../sf/types.ts'
 
 // const SOFT_GAIN = 10 ** (-3 / 20);   // CC67: 音量 -3dB(量は好みで調整)
 const SOFT_CUTOFF = -1200;           // CC67: カットオフを1オクターブ下げる(同上
@@ -43,13 +43,13 @@ const GEN: Record<string, [number, number, number]> = {
 };
 const GEN_ENTRIES = Object.entries(GEN);
 
-export default function calc_params(iz: any, inst: any, pz: any, preset: any, note: number,
+export default function calc_params(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset, note: number,
 				    opts: { release_scale?: number; soft?: boolean } = {}) {
     const p: Record<string, number> = {};
     const k = 60 - note;
     for( const [name, [def, min, max]] of GEN_ENTRIES ){
-        const inst_val = iz.generators[name] ?? inst.global_zone?.generators[name] ?? def;
-        const preset_val = pz.generators[name] ?? preset.global_zone?.generators[name] ?? 0;
+        const inst_val = (iz.generators[name] ?? inst.global_zone?.generators[name] ?? def) as number;
+        const preset_val = (pz.generators[name] ?? preset.global_zone?.generators[name] ?? 0) as number;
         p[name] = Math.min(max, Math.max(min, inst_val + preset_val));
     }
     p.hold_vol_env  += p.keynum_to_vol_env_hold  * k;
