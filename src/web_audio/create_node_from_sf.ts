@@ -1,3 +1,4 @@
+import type { Preset } from '../sf/types.ts'
 import is_match_zone from './create_node_from_sf/is_match_zone.ts'
 import calc_params from './create_node_from_sf/calc_params.ts'
 import createADSREnvelope from './create_node_from_sf/createADSREnvelope.ts'
@@ -5,7 +6,6 @@ import create_buffer_source from './create_node_from_sf/create_buffer_source.ts'
 import create_filter_panner from './create_node_from_sf/create_filter_panner.ts'
 import attach_modulation from './create_node_from_sf/attach_modulation.ts'
 
-import type { Preset } from '../sf/types.ts'
 import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
@@ -20,13 +20,13 @@ export default function create_node_from_sf(context: AudioContext, note: number,
 
     for( const pz of preset.zones ){
         if( !is_match_zone(note, vel, pz) ) continue;
+	if( !pz.instrument ) continue
         const inst = pz.instrument;
-	if( !inst ) continue;
         for( const iz of inst.zones ){
             if( !is_match_zone(note, vel, iz) ) continue;
-
-            const p = calc_params(iz, inst, pz, preset, note, opts);
 	    if( !iz.sample ) continue;
+	    
+            const p = calc_params(iz, inst, pz, preset, note, opts);	    
             const source = create_buffer_source(context, note, iz.sample, iz, inst, p);
 
             const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);
