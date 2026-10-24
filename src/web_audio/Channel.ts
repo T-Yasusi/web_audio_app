@@ -44,12 +44,29 @@ class Channel{
 	const cents = this.state.bend / 8192 * this.state.bend_range * 100;
 	this.bend.offset.setTargetAtTime(cents, time, SMOOTH);
     }
+
+    change_state(time: number, cc: number, value: number){
+        if( cc === 6 && this.state.rpn_msb === 0 && this.state.rpn_lsb === 0 )  // RPN 0: ピッチベンドの幅(半音)
+            this.update_bend(time, value);
+        if( cc === 7 || cc === 11 ){
+            if( cc === 7 ) this.state.volume = value; else this.state.expression = value;
+            this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
+        }
+	else if( cc === 10 ) this.pan.offset.setTargetAtTime(Math.max(-1, (value - 64) / 63), time, SMOOTH);
+        else if( cc === 91 ) this.state.reverb = value;
+        else if( cc === 93 ) this.state.chorus = value;
+        else if( cc === 101 ) this.state.rpn_msb = value;
+        else if( cc === 100 ) this.state.rpn_lsb = value;
+        else if( cc === 121 ) this.reset_state(time);
+    }
+    
     reset_state(time: number){
 	// コントローラのリセット(ボリュームとパンは戻さない)
         this.state.expression = 127;
         this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
         this.state.bend = 0;
         this.update_bend(time, 0);
+
         this.state.rpn_msb = 127;
         this.state.rpn_lsb = 127;
         this.state.reverb = 0;

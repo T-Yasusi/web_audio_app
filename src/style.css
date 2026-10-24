@@ -1,9 +1,11 @@
 :root {
 }
 
-header { text-align: center; }
-
-td { text-align: center; }
-#sf_table > table {
-    width: 100%;	
+input[type="number"]{
+    width: 80px; 
 }
+
+header { text-align: center; }
+#tune_slider { width: 90%; }
+
+

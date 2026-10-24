@@ -1,20 +1,20 @@
 import type { Preset } from '../sf/types.ts'
-import is_match_zone from './create_node_from_sf/is_match_zone.ts'
-import calc_params from './create_node_from_sf/calc_params.ts'
-import createADSREnvelope from './create_node_from_sf/createADSREnvelope.ts'
-import create_buffer_source from './create_node_from_sf/create_buffer_source.ts'
-import create_filter_panner from './create_node_from_sf/create_filter_panner.ts'
-import attach_modulation from './create_node_from_sf/attach_modulation.ts'
+import is_match_zone from './create_voice/is_match_zone.ts'
+import calc_params from './create_voice/calc_params.ts'
+import createADSREnvelope from './create_voice/createADSREnvelope.ts'
+import create_buffer_source from './create_voice/create_buffer_source.ts'
+import create_filter_panner from './create_voice/create_filter_panner.ts'
+import attach_modulation from './create_voice/attach_modulation.ts'
 
 import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
 import { REVERB_CC_MAX, CHORUS_CC_MAX } from './global_vals.ts'
 
-export default function create_node_from_sf(context: AudioContext, note: number, vel: number,
-                                            start_time: number, duration: number, preset: Preset, channel: Channel,
-					    reverb: Reverb, chorus: Chorus,
-					    opts: { release_scale?: number; soft?: boolean } = {}) {
+export default function create_voice(context: AudioContext, note: number, vel: number,
+                                     start_time: number, duration: number, preset: Preset, channel: Channel,
+				     reverb: Reverb, chorus: Chorus,
+				     opts: { release_scale?: number; soft?: boolean } = {}) {
     const merger = context.createGain();
     let active = 0;   // 鳴っているボイスの数
 

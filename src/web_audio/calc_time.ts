@@ -1,7 +1,5 @@
-import MIDIPlayer from './MIDIPlayer.ts'
-
-export default function calc_time(tick: number, player: MIDIPlayer) {
-    const { ticks, secs, rates } = player.time_table;
+export default function calc_time(tick: number, time_table: { ticks: number[]; secs: number[]; rates: number[] }) {
+    const { ticks, secs, rates } = time_table;
 
     // tick 以下で最大の開始tick(= tick が属するテンポ区間)を二分探索
     let lo = 0, hi = ticks.length - 1;

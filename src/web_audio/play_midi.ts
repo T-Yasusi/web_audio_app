@@ -1,35 +1,40 @@
 import type { MidiFile } from '../midi/types.ts'
 import type { SFFile } from '../sf/types.ts'
-import context from './context.ts'
-import master_gain from './master_gain.ts'
+import manager from './manager.ts'
+// import master_gain from './master_gain.ts'
 import calc_time from './calc_time.ts'
 import MIDIPlayer from './MIDIPlayer'
+import set_tune_slider from '../html/set_tune_slider.ts'
 
 const LOOKAHEAD = 1.1;   // 先読みする秒数
 const INTERVAL = 1000;   // タイマーの間隔(ms)。先読みより短くする
-const LEAD = 0.05;
+const LEAD = 0.1;
 
 export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
+    const context = manager.context;
+    const master_gain = manager.master_gain;
     await context.resume();                         // 先に再開してから時刻を読む
     
     const player = new MIDIPlayer(context, master_gain, sf_json.presets, midi_json);
-    let index = 0;
     let base_time = context.currentTime + LEAD;
    
     function scheduling() {
         const song_now = context.currentTime - base_time;   // 曲の何秒目か
         const horizon = song_now + LOOKAHEAD;
 	
-        while( index < player.events.length ){
-            const event = player.events[index];
-            const start = calc_time(event.tick, player);
+        while( player.index < player.events.length ){
+            const event = player.events[player.index];
+            const start = calc_time(event.tick, player.time_table);
             if( start >= horizon ) break;                    // ここから先は次回
 
-	    player.apply_event(index);
-            index++;
+	    player.apply_event(player.index);
+            player.index++;
         }
-        if( index >= player.events.length ) clearInterval(timer);
+        if( player.index >= player.events.length ) clearInterval(timer);
+
+	set_tune_slider(player);
     }
 
+    scheduling();
     const timer = setInterval(scheduling, INTERVAL);
 }

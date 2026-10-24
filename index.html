@@ -20,6 +20,10 @@
       <span>ファイル:</span> <select id="sf_file"></select>
       <h2>MIDI</h2>
       <span>ファイル:</span> <select id="midi_file"></select> <br>
+      曲の長さ: <input readonly type="number" step="0.1" id="tune_duration"></input>[s] <br>
+      ノート数: <input readonly type="number" step="1" id="notes"></input> <br>
+      <input id="tune_slider" type="range" min="0" max="1" step="0.001" value="0.0"></input>
+      
       <h2>コントローラー</h2>
       ボリューム: <input id="volume" type="number" min="0" max="1" step="0.01" value="0.3"></input>
       <input id="volume_slider" type="range" min="0" max="1" step="0.01" value="0.3"></input><br>
