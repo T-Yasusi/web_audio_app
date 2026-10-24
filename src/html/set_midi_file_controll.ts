@@ -1,19 +1,23 @@
 import parseMIDI from './../midi/parse.ts'
 import post_parse from './../midi/post_parse.ts'
-import { midi_files } from './../global_vals.ts'
+import manager from './../web_audio/manager.ts'
 
 const select = document.getElementById('midi_file');
+const midi_files = await fetch("json/midi_file.json").then(a => a.json());
+
 for( const [i, midi_file] of midi_files.entries() ){
     const response = await fetch(midi_file.path);
     const buffer = await response.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const midi_data = post_parse(parseMIDI(bytes));
 
-    midi_file.data = midi_data;
+    manager.midi_files.push(midi_data);
 
     const option = document.createElement('option');
     option.id = "midi_"+i;
     option.value = i;
     option.innerHTML = midi_file.name;
-    select!.appendChild(option)
+    select!.appendChild(option);
+    
+    (document.getElementById('midi_file')! as HTMLInputElement).dispatchEvent(new Event('change'))
 }

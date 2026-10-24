@@ -6,12 +6,11 @@ import Chorus from './Chorus.ts'
 import build_table from './build_table.ts'
 import calc_time from './calc_time.ts'
 
-//const LEAD = 0.05;        // 再生開始までの余裕(秒)
+const LEAD = 0.05;        // 再生開始までの余裕(秒)
 import create_voice from './create_voice.ts'
 
 class MIDIPlayer{
-    context: AudioContext;
-    base_time: number;
+    context: AudioContext
     index = 0;
     presets: Map<number, Preset>;
     time_table: { ticks: number[]; secs: number[]; rates: number[] };
@@ -21,18 +20,30 @@ class MIDIPlayer{
     program = new Array(16).fill(0);
     bank =  new Array(16).fill(0);
     channels: Array<Channel>;
-
-    constructor(context: AudioContext, gain: AudioNode, presets: Preset[], midi_json: MidiFile ){
-	this.context = context;
-	this.base_time = context.currentTime;
+    base_offset: number;
+    time_offset = 0;
+    
+    constructor(context: AudioContext, gain: AudioNode, presets: Preset[], midi_json: MidiFile){
+	this.context = context
 	this.presets = new Map(presets.map((p: Preset) => [p.bank * 128 + p.MIDInumber, p]));
 	this.time_table = build_table(midi_json);
 	this.events = midi_json.tracks.flat().sort((a: Event, b: Event) => a.tick - b.tick);
 	this.channels = Array.from({ length: 16 }, () => new Channel(context, gain) );
 	this.reverb = new Reverb(context);
 	this.chorus = new Chorus(context);
+	this.base_offset = context.currentTime + LEAD;
     }
 
+    duration(){
+	let max = 0;
+	for( const event of this.events ){
+	    const time = calc_time(event.tick, this.time_table);
+	    const end = (event as Note).endTick ? calc_time((event as Note).endTick, this.time_table) : 0;
+	    max = Math.max(time, end, max);
+	}
+	return max;
+    }
+    
     find_preset(event: Note){
 	const bank = event.channel === 9 ? 128 : this.bank[event.channel];
 	const program = this.program[event.channel];
@@ -52,7 +63,8 @@ class MIDIPlayer{
 	    const stop = calc_time(note.endTick, this.time_table);
 
             const gain = create_voice(this.context, note.midi_note, note.velocity,
-                                      this.base_time + start, stop - start, preset, this.channels[note.channel],
+                                      start + this.base_offset - this.time_offset, stop - start,
+				      preset, this.channels[note.channel],
                                       this.reverb, this.chorus,
                                       { release_scale: note.release_scale, soft: note.soft });
 
