@@ -25,9 +25,9 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 上記のバージョンで開発・動作確認をしています。これより古いバージョンでも動く可能性はありますが、未検証です。
 
 ## 実装済み/未実装機能
-### 仕様書など
-[SoundFont Technical Specification 2.04(Polyphoneのミラー)](https://polyphone.io/doc/files/sf_specifications_v2.04.pdf)
-[MIDI 1.0 Detailed Specification(MIDI Association の公式ページ)](https://midi.org/midi-1-0-detailed-specification)
+### 参考にした仕様
+- [SoundFont Technical Specification 2.04](https://polyphone.io/doc/files/sf_specifications_v2.04.pdf)(Polyphone が公開している PDF)
+- [MIDI 1.0 Detailed Specification](https://midi.org/midi-1-0-detailed-specification)(MIDI Association)
 
 ### 実装済み
 - SoundFontパーサー `src/sf`に実装、sf3形式(MuseSocreの独自拡張)は未実装

@@ -1,10 +1,9 @@
 class Chorus{
     input: GainNode;
-    output: GainNode;
 
     oscillator = Array<AudioNode>();
 
-    constructor(context: AudioContext, voices = 3, base = 0.025, rate = 0.5, depth = 0.002, wet = 0.6){
+    constructor(context: AudioContext, output: GainNode, voices = 3, base = 0.025, rate = 0.5, depth = 0.002, wet = 0.6){
 	this.input = context.createGain();
 	this.output = context.createGain();
 	this.output.gain.value = wet;
@@ -27,7 +26,7 @@ class Chorus{
 
 	    this.input.connect(delay);
 	    delay.connect(pan);
-	    pan.connect(this.output);
+	    pan.connect(output);
 
 	    this.oscillator.push(lfo);
 	}

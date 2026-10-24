@@ -10,10 +10,9 @@ const INTERVAL = 1000;   // タイマーの間隔(ms)。先読みより短くす
 
 export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
     const context = manager.context;
-    const master_gain = manager.master_gain;
     await context.resume();                         // 先に再開してから時刻を読む
     
-    const player = new MIDIPlayer(context, master_gain, sf_json.presets, midi_json);
+    const player = new MIDIPlayer(context, manager.master_gain, sf_json.presets, midi_json);
     manager.player = player;
    
     function scheduling() {

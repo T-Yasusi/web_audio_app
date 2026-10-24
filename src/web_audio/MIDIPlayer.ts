@@ -29,8 +29,8 @@ class MIDIPlayer{
 	this.time_table = build_table(midi_json);
 	this.events = midi_json.tracks.flat().sort((a: Event, b: Event) => a.tick - b.tick);
 	this.channels = Array.from({ length: 16 }, () => new Channel(context, gain) );
-	this.reverb = new Reverb(context);
-	this.chorus = new Chorus(context);
+	this.reverb = new Reverb(context, gain);
+	this.chorus = new Chorus(context, gain);
 	this.base_offset = context.currentTime + LEAD;
     }
 

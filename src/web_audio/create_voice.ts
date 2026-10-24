@@ -49,7 +49,7 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 		send.gain.value = send_gen;
 		panner.connect(send);
 		send.connect(reverb.input);
-		reverb.output.connect(merger);
+		nodes.push(send);
 	    }
 	    
 	    if( p.chorus_effect_send > 0 || channel.state.chorus > 0 ){
@@ -58,7 +58,7 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 		send.gain.value = send_gen;
 		panner.connect(send);
 		send.connect(chorus.input);
-		chorus.output.connect(merger);
+		nodes.push(send);
 	    }
 	    	    		
             active++;
