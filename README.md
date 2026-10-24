@@ -25,17 +25,35 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 上記のバージョンで開発・動作確認をしています。これより古いバージョンでも動く可能性はありますが、未検証です。
 
 ## 実装済み/未実装機能
+### 仕様書など
+[SoundFont Technical Specification 2.04(Polyphoneのミラー)](https://polyphone.io/doc/files/sf_specifications_v2.04.pdf)
+[MIDI 1.0 Detailed Specification(MIDI Association の公式ページ)](https://midi.org/midi-1-0-detailed-specification)
+
+### 実装済み
+- SoundFontパーサー `src/sf`に実装、sf3形式(MuseSocreの独自拡張)は未実装
+- SMF(Standard MIDI File)パーサー `src/midi`に実装
+- 基本的な演奏、`src/web_audio`に実装
+
+リバーブとコーラスは実装してるがそのパラメーターは実装独自の設計値による。
+
+### 未実装
+- MidiのSysExイベントへの対応
+- 拍子、調号、歌詞、マーカー、キューポイント、トラック名等のMidiMetaイベントへの対応、再生に不要なので読み飛ばしている
+- SoundFontのモジュレーター(imod/pmod)、一部固定ジェネレーターを使うものは実装済み
+- SoundFontのexclusive_class(ジェネレーター57)
+
+より細かい実装/未実装は以下の表を参照のこと
 ### MIDI
 | CC     | 名前                      | 状態 |
 |:---:   |:---:                      |:--- | 
 | 0      | バンクセレクトMSB         | 実装済み(CC0のLSB(CC32)は無視) |
-| 1      | モジュレーションホイール  | これから(ビブラート深さ)     |
+| 1      | モジュレーションホイール  | 未実装                       |
 | 6      | データエントリー MSB      | RPN 用に実装済み             |
 | 7      | ボリューム                | 実装済み                     |
 | 10     | パン                      | 実装済み                     | 
 | 11     | エクスプレッション        | 実装済み                     |
 | 38     | データエントリー LSB      | RPN の細かい値(必要になったら) |
-| 32〜63 | 0〜31 の LSB(細かい値)    | ほぼ使われない(CC32 のバンクセレクト LSB のみ GM2 で使われる) | 
+| 32〜63 | 0〜31 の LSB(細かい値)    | ほぼ使われない(CC32 のバンクセレクト LSB のみ GM2 で使われる) |
 | 64     | サステイン(ダンパーペダル) | 実装済み		      |
 | 66     | ソステヌート              | 実装済み			      |
 | 67     | ソフトペダル              | 実装済み			      |
@@ -49,11 +67,11 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 
 - MSB: Most Significant Byte (最上位バイト)
 - LSB: Least Significant Byte (最下位バイト)
-- RPN: Ragistered Parameter Number (登録済みパラメーター番号)
-- NRPN: Non-Ragistered Parameter Number (未登録済みパラメーター番号)
+- RPN: Registered Parameter Number (登録済みパラメーター番号)
+- NRPN: Non-Registered Parameter Number (未登録済みパラメーター番号)
 
 ## SoundFontジェネレーター
-| 番号 | 名前					| 単位                  | 範囲        | 規定値 | 実装 |
+| 番号 | 名前					| 単位                  | 範囲        | 既定値 | 実装 |
 |:---: |:---:                         		| :---                	|:---:        |:---:   |:---: | 
 | 0    | Start Address Offset          		| サンプル     	      	| 0以上       | 0      | × | 
 | 1    | End Address Offset            		| サンプル     	      	| 0以上       | 0      | × |
@@ -79,18 +97,18 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 | 23   | Delay Vib LFO                		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 24   | Freq Vib LFO             		| 絶対セント            | -16000 ~ 4500 | 0      | 〇 |
 | 25   | Delay Mod Env            		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
-| 26   | Attack Mod Env               		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
+| 26   | Attack Mod Env               		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 27   | Hold  Mod Env                		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
-| 28   | Decay Mod Env                		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
+| 28   | Decay Mod Env                		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 29   | Sustain Mod Env              		| 0.1%(減衰量)          | 0-1000   	| 0 	 | 〇 |
-| 30   | Release Mod Env               		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
+| 30   | Release Mod Env               		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 31   | Keynum To Mod Env Hold       		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
 | 32   | Keynum To Mod Env Decay      		| タイムセント/キー     | $\pm 1200$    | 0	| 〇 | 
 | 33   | Delay Vol Env 	   	      		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 34   | Attack Vol Env 	      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 35   | Hold Vol Env		      		| タイムセント          | -12000 ~ 5000 | -12000 | 〇 |
 | 36   | Decay Vol Env 		      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
-| 37   | Sustain Vol Env 	      		| cB(減衰量)            | 0 ~ 14400     | 0 	| 〇 |
+| 37   | Sustain Vol Env 	      		| cB(減衰量)            | 0 ~ 1440      | 0 	| 〇 |
 | 38   | Release Vol Env 	      		| タイムセント          | -12000 ~ 8000 | -12000 | 〇 |
 | 39   | Keynum To Vol Env Hold       		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
 | 40   | Keynum To Vol Env Decay      		| タイムセント/キー     | $\pm 1200$    | 0 	| 〇 | 
@@ -101,7 +119,7 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 | 45   | Start Loop Address Coarse Offset 	| 32768サンプル         | $\pm$       	| 0      | ×  |
 | 46   | Key Num                          	| キー番号              | 0 ~ 127       | -1(無効) | 〇 |
 | 47   | Velocity                     	  	| ベロシティ            | 0 ~ 127       | -1(無効) | 〇 |
-| 48   | Initial Attenuation           	  	| cB                    | 0 ~ 14400     | 0      | 〇 |
+| 48   | Initial Attenuation           	  	| cB                    | 0 ~ 1440      | 0      | 〇 |
 | 49   | (予約)                       	  	| -                     | -             | -      | -  |
 | 50   | End Loop Address Coarse Offset   	| 32768サンプル         | $\pm$ 	| 0      | ×  |
 | 51   | Coarase Tune                      	| 半音                  | $\pm 120$     | 0      | 〇 |
@@ -118,12 +136,12 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 
 | 名前                         | 作者                 | ライセンス    | 同梱 | URL |
 |:---                          |:---                  |:---:          |:---: |:--- |
-| 交響曲第7番イ長調            | ベートーヴェン       | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
-| エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
-| パイナップル・ラグ           | スコット・ジョプリン | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
-| ポッサムとポッターズ         | チャールズ・ハンター | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
-| トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | <https://www.mutopiaproject.org/cgibin> |
-| rock_intense_10411           |  | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | 〇 | [Keynata Commons](https://carf-coder.itch.io/keynata-commons-music-pack) | 
+| 交響曲第7番イ長調            | ベートーヴェン       | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| パイナップル・ラグ           | スコット・ジョプリン | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| ポッサムとポッターズ         | チャールズ・ハンター | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| rock_intense_10411           | | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | 〇 | [Keynata Commons Music Pack](https://carf-coder.itch.io/keynata-commons-music-pack) | 
 
 ### SoundFont
 | 名前               | 作者                 | ライセンス    | 同梱 | URL |
