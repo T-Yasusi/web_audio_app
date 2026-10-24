@@ -25,5 +25,10 @@
 	"path": "midi/PineappleRag.mid",
 	"name": "パイナップル・ラグ(ピアノ作品)",
 	"license": "public domain"
+    },
+    {
+	"path": "midi/rock_intense_10411.mid",
+	"name": "rock_intense_10411",
+	"license": "CC0"
     }
 ]
