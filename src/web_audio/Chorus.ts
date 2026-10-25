@@ -1,13 +1,15 @@
 class Chorus{
     input: GainNode;
-
+    output: GainNode;
+    
     oscillator = Array<AudioNode>();
 
-    constructor(context: AudioContext, output: GainNode, voices = 3, base = 0.025, rate = 0.5, depth = 0.002, wet = 0.6){
+    constructor(context: AudioContext, gain: GainNode, voices = 3, base = 0.025, rate = 0.5, depth = 0.002, wet = 0.6){
 	this.input = context.createGain();
 	this.output = context.createGain();
 	this.output.gain.value = wet;
-	
+	this.output.connect(gain);
+		
 	for( let i = 0; i < voices; i++ ){
             const delay = context.createDelay(0.1);
             delay.delayTime.value = base + i * 0.004;          // 本ごとに少しずらす
@@ -26,7 +28,7 @@ class Chorus{
 
 	    this.input.connect(delay);
 	    delay.connect(pan);
-	    pan.connect(output);
+	    pan.connect(this.output);
 
 	    this.oscillator.push(lfo);
 	}

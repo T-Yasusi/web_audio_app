@@ -46,8 +46,10 @@ class Channel{
     }
 
     change_state(time: number, cc: number, value: number){
-        if( cc === 6 && this.state.rpn_msb === 0 && this.state.rpn_lsb === 0 )  // RPN 0: ピッチベンドの幅(半音)
-            this.update_bend(time, value);
+        if( cc === 6 && this.state.rpn_msb === 0 && this.state.rpn_lsb === 0 ){  // RPN 0: ピッチベンドの幅(半音)
+	    this.state.bend_range = value;
+	    this.update_bend(time, this.state.bend);
+	}
         if( cc === 7 || cc === 11 ){
             if( cc === 7 ) this.state.volume = value; else this.state.expression = value;
             this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);

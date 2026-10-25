@@ -1,14 +1,18 @@
 class Reverb{
     input: GainNode;
+    output: GainNode;
     conv: ConvolverNode;
 
-    constructor(context: AudioContext, output: GainNode, wet = 0.5){
+    constructor(context: AudioContext, gain: GainNode, wet = 0.5){
 	this.input = context.createGain();
+	this.output = context.createGain();
+	this.output.gain.value = wet;
 	this.conv = context.createConvolver();
 	this.conv.buffer = make_impulse(context);
 
 	this.input.connect(this.conv);
-	this.conv.connect(output);
+	this.conv.connect(this.output);
+	this.output.connect(gain);
     }
 }
 

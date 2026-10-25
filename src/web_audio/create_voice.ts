@@ -34,12 +34,17 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 	    source.connect(amp);
             amp.connect(filter);
             filter.connect(panner);
-            panner.connect(merger);
+            const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
+	    if( trem ){
+		panner.connect(trem);
+		trem.connect(merger);
+	    }
+	    else panner.connect(merger);
 	    
             channel.bend.connect(source.detune);     // ← 追加: ピッチベンド
             channel.pan.connect(panner.pan);         // ← 追加: CC10
 
-            const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
+
             const nodes = attach_modulation(context, p, start_time, duration, end_time,
 					    { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib });
 
@@ -67,6 +72,7 @@ export default function create_voice(context: AudioContext, note: number, vel: n
                 if( --active === 0 ){
 		    merger.disconnect();
 		    nodes.forEach(a => a.disconnect());
+		    if( trem ) trem.disconnect();
 		}
 	    };
             source.start(start_time);

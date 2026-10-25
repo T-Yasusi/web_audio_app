@@ -78,7 +78,10 @@ function pedal_values(controls: Event[], cc: number) {
 
 const ticks_of = (controls: Event[], cc: number) => {
     const r: number[][] = Array.from({ length: 16 }, () => []);
-    for( const e of controls ) if( (e as MidiEvent).data as [ number, number][0] === cc ) r[(e as MidiEvent).channel].push(e.tick);
+    for( const e of controls ){
+	const d = (e as MidiEvent).data as [number, number];
+	if( d[0] === cc ) r[(e as MidiEvent).channel].push(e.tick);
+    }
     return r;
 };
 

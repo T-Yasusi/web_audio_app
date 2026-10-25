@@ -23,7 +23,7 @@ class MIDIPlayer{
     base_offset: number;
     time_offset = 0;
     
-    constructor(context: AudioContext, gain: AudioNode, presets: Preset[], midi_json: MidiFile){
+    constructor(context: AudioContext, gain: GainNode, presets: Preset[], midi_json: MidiFile){
 	this.context = context
 	this.presets = new Map(presets.map((p: Preset) => [p.bank * 128 + p.MIDInumber, p]));
 	this.time_table = build_table(midi_json);
@@ -77,7 +77,8 @@ class MIDIPlayer{
 	    if( event.type === 'controlChange' && data[0] === 0 ) this.bank[ev.channel] = data[1];
 	    else if( event.type === 'pitchBend' )
 		this.channels[ev.channel].update_bend(start, ((data[1] << 7) | data[0]) - 8192); // -8192〜8191
-	    else this.channels[ev.channel].change_state(start, data[0], data[1]);
+	    else if( event.type === 'controlChange' )
+		this.channels[ev.channel].change_state(start, data[0], data[1]);
 	}
     }
 }
