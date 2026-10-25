@@ -14,6 +14,7 @@ document.getElementById('play_midi')!.addEventListener('click', (e)=>{
 
 	    if( midi_id !== -1 || sf_id !== -1){
 		manager.reconstruct();
+		document.getElementById('volume_slider')!.dispatchEvent(new Event('change'));		
 		context = manager.context;
 	    }		    
 	    play_midi(manager.midi_files[midi_id], manager.sf_files[sf_id])

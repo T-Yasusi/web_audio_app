@@ -2,7 +2,7 @@ import type { MidiFile } from '../midi/types.ts'
 import type { SFFile } from '../sf/types.ts'
 import manager from './manager.ts'
 import calc_time from './calc_time.ts'
-import MIDIPlayer from './MIDIPlayer'
+import MIDIPlayer from './MIDIPlayer.ts'
 import set_tune_slider from '../html/set_tune_slider.ts'
 
 const LOOKAHEAD = 1.1;   // 先読みする秒数
@@ -27,8 +27,9 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
 	    player.apply_event(player.index);
             player.index++;
         }
-        if( player.index >= player.events.length ){
-	    manager.context.suspend();
+	
+        if( player.index >= player.events.length ){	   
+	    setTimeout(()=> player.context.suspend(), 3000);
 	    clearInterval(timer);
 	}
 	set_tune_slider(manager.player);
