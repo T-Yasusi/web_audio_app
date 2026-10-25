@@ -1,6 +1,6 @@
 import { timecents } from '../util_funcs.ts'
 
-type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode | null; vib_depth?: AudioNode };
+type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode | null; vib_depth?: AudioNode; dispose?: (() => void)[] };
 
 // モジュレーションエンベロープと LFO をボイスにつなぐ。作ったノードを返す(終了時に disconnect する)
 export default function attach_modulation(context: AudioContext, p: Record<string, number>,
@@ -52,6 +52,8 @@ export default function attach_modulation(context: AudioContext, p: Record<strin
             const g = context.createGain();
             g.gain.value = 0;                  // 実効ゲイン = チャンネルの深さ(セント)
             target.vib_depth.connect(g.gain);  // 深さを、ゲインに信号として足す
+            const depth_src = target.vib_depth;
+            target.dispose?.push(() => depth_src.disconnect(g.gain));   // ボイス終了時に、チャンネル側から外す
             lfo.connect(g);
             g.connect(target.detune);
             nodes.push(g);

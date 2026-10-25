@@ -1,4 +1,5 @@
 {
+    "strict": true,
   "compilerOptions": {
     "target": "es2023",
     "module": "esnext",

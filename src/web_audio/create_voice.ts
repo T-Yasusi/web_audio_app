@@ -43,10 +43,13 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 	    
             channel.bend.connect(source.detune);     // ← 追加: ピッチベンド
             channel.pan.connect(panner.pan);         // ← 追加: CC10
-
+            const dispose: (() => void)[] = [
+                () => channel.bend.disconnect(source.detune),
+                () => channel.pan.disconnect(panner.pan),
+            ];
 
             const nodes = attach_modulation(context, p, start_time, duration, end_time,
-					    { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib });
+					    { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
 
 	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
 		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
@@ -69,6 +72,9 @@ export default function create_voice(context: AudioContext, note: number, vel: n
             active++;
             source.onended = () => {
                 source.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
+                // チャンネル共有ノード(bend / pan / vib)からの接続を外す。外さないと、鳴らした音符の数だけ接続が溜まる
+                dispose.forEach(f => f());
+		
                 if( --active === 0 ){
 		    merger.disconnect();
 		    nodes.forEach(a => a.disconnect());

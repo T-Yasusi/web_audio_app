@@ -38,8 +38,9 @@ class MIDIPlayer{
 	let max = 0;
 	for( const event of this.events ){
 	    const time = calc_time(event.tick, this.time_table);
-	    const end = (event as Note).endTick ? calc_time((event as Note).endTick, this.time_table) : 0;
-	    max = Math.max(time, end, max);
+//	    const end = (event as Note).endTick ? calc_time((event as Note).endTick, this.time_table) : 0;
+	    //	    max = Math.max(time, end, max);
+	    max = Math.max(time, max);
 	}
 	return max;
     }

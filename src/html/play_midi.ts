@@ -8,13 +8,12 @@ document.getElementById('play_midi')!.addEventListener('click', (e)=>{
     let sf_id= Number((document.getElementById('sf_file') as HTMLSelectElement).value);
     
     if( context.state === 'suspended' ){
-	if( midi_id !== current_midi_id || sf_id !== current_sf_id ){
+	if( midi_id !== current_midi_id || sf_id !== current_sf_id || manager.finished ){
 	    current_midi_id = midi_id;
 	    current_sf_id = sf_id;
 
 	    if( midi_id !== -1 || sf_id !== -1){
 		manager.reconstruct();
-		document.getElementById('volume_slider')!.dispatchEvent(new Event('change'));		
 		context = manager.context;
 	    }		    
 	    play_midi(manager.midi_files[midi_id], manager.sf_files[sf_id])

@@ -30,7 +30,7 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 - [MIDI 1.0 Detailed Specification](https://midi.org/midi-1-0-detailed-specification)(MIDI Association)
 
 ### 実装済み
-- SoundFontパーサー `src/sf`に実装、sf3形式(MuseSocreの独自拡張)は未実装
+- SoundFontパーサー `src/sf`に実装、sf3形式(MuseScoreの独自拡張)は未実装
 - SMF(Standard MIDI File)パーサー `src/midi`に実装
 - 基本的な演奏、`src/web_audio`に実装
 
@@ -117,8 +117,8 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 | 43   | Key Range                    		| キー番号(最大/最小)   | -           	| -      | 〇 |
 | 44   | Vel Range                        	| べロシティ(最大/最小) | -         	| -      | 〇 |
 | 45   | Start Loop Address Coarse Offset 	| 32768サンプル         | $\pm$       	| 0      | ×  |
-| 46   | Key Num                          	| キー番号              | 0 ~ 127       | -1(無効) | 〇 |
-| 47   | Velocity                     	  	| ベロシティ            | 0 ~ 127       | -1(無効) | 〇 |
+| 46   | Key Num                          	| キー番号              | 0 ~ 127       | -1(無効) | × |
+| 47   | Velocity                     	  	| ベロシティ            | 0 ~ 127       | -1(無効) | × |
 | 48   | Initial Attenuation           	  	| cB                    | 0 ~ 1440      | 0      | 〇 |
 | 49   | (予約)                       	  	| -                     | -             | -      | -  |
 | 50   | End Loop Address Coarse Offset   	| 32768サンプル         | $\pm$ 	| 0      | ×  |
@@ -136,11 +136,11 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 
 | 名前                         | 作者                 | ライセンス    | 同梱 | URL |
 |:---                          |:---                  |:---:          |:---: |:--- |
-| 交響曲第7番イ長調            | ベートーヴェン       | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
-| エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
-| パイナップル・ラグ           | スコット・ジョプリン | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
-| ポッサムとポッターズ         | チャールズ・ハンター | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
-| トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | [Mutopla Project](https://www.mutopiaproject.org) |
+| 交響曲第7番イ長調            | ベートーヴェン       | public domain | 〇   | [Mutopia Project](https://www.mutopiaproject.org) |
+| エリート・シンコペーションズ | スコット・ジョプリン | public domain | 〇   | [Mutopia Project](https://www.mutopiaproject.org) |
+| パイナップル・ラグ           | スコット・ジョプリン | public domain | 〇   | [Mutopia Project](https://www.mutopiaproject.org) |
+| ポッサムとポッターズ         | チャールズ・ハンター | public domain | 〇   | [Mutopia Project](https://www.mutopiaproject.org) |
+| トッカータとフーガ ニ短調    | BWV 565、伝バッハ    | public domain | 〇   | [Mutopia Project](https://www.mutopiaproject.org) |
 | rock_intense_10411           | | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | 〇 | [Keynata Commons Music Pack](https://carf-coder.itch.io/keynata-commons-music-pack) | 
 
 ### SoundFont
