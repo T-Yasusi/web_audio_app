@@ -8,6 +8,7 @@ import calc_time from './calc_time.ts'
 
 const LEAD = 0.05;        // 再生開始までの余裕(秒)
 import create_voice from './create_voice.ts'
+import type { ZoneVoice } from './create_voice.ts'
 
 class MIDIPlayer{
     context: AudioContext
@@ -22,6 +23,7 @@ class MIDIPlayer{
     channels: Array<Channel>;
     base_offset: number;
     time_offset = 0;
+    exclusive: Map<number, ZoneVoice[]> = new Map();   // キー: チャンネル * 128 + 排他クラス
     
     constructor(context: AudioContext, gain: GainNode, presets: Preset[], midi_json: MidiFile){
 	this.context = context
@@ -51,6 +53,18 @@ class MIDIPlayer{
         const base = bank === 128 ? 128 : 0;
         return this.presets.get(bank * 128 + program) ?? this.presets.get(base * 128 + program) ?? this.presets.get(base * 128);
     }
+
+    // 同じチャンネル・同じ排他クラスで、先に鳴っているゾーンを止め、新しいゾーンを登録する
+    register_exclusive(channel: number, zones: ZoneVoice[], t0: number){
+        for( const z of zones ){
+            if( z.exclusive_class === 0 ) continue;
+            const key = channel * 128 + z.exclusive_class;
+            const list = (this.exclusive.get(key) ?? []).filter(v => v.end_time > t0);   // 鳴り終わったものは捨てる
+            for( const v of list ) if( v.start_time < t0 ) v.choke(t0);                // 同時刻のゾーン(ステレオの左右)は止めない
+            list.push(z);
+            this.exclusive.set(key, list);
+        }
+    }
     
     apply_event(index: number){
 	const event = this.events[index];
@@ -63,13 +77,15 @@ class MIDIPlayer{
 	    if( !preset ) return;
 	    const stop = calc_time(note.endTick, this.time_table);
 
-            const gain = create_voice(this.context, note.midi_note, note.velocity,
-                                      start + this.base_offset - this.time_offset, stop - start,
-				      preset, this.channels[note.channel],
-                                      this.reverb, this.chorus,
-                                      { release_scale: note.release_scale, soft: note.soft });
-
-            gain.connect(this.channels[note.channel].input);
+            const t0 = start + this.base_offset - this.time_offset;
+            const voice = create_voice(this.context, note.midi_note, note.velocity,
+                                       t0, stop - start,
+                                       preset, this.channels[note.channel],
+                                       this.reverb, this.chorus,
+                                       { release_scale: note.release_scale, soft: note.soft });
+	    
+            voice.output.connect(this.channels[note.channel].input);
+            this.register_exclusive(note.channel, voice.zones, t0);
 	}
 	else{
 	    const ev = event as MidiEvent;

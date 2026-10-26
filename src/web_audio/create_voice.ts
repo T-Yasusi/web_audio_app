@@ -11,10 +11,17 @@ import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
 import { REVERB_CC_MAX, CHORUS_CC_MAX } from './global_vals.ts'
 
+const CHOKE_FADE = 0.02;   // 排他クラスで止めるときのフェードアウト(秒)
+
+// ゾーンごとの「止める」ためのハンドル。同じ排他クラスの次のノートが来たときに使う
+export type ZoneVoice = { exclusive_class: number; start_time: number; end_time: number; choke: (time: number) => void };
+export type Voice = { output: GainNode; zones: ZoneVoice[] };
+
 export default function create_voice(context: AudioContext, note: number, vel: number,
                                      start_time: number, duration: number, preset: Preset, channel: Channel,
 				     reverb: Reverb, chorus: Chorus,
-				     opts: { release_scale?: number; soft?: boolean } = {}) {
+				     opts: { release_scale?: number; soft?: boolean } = {}): Voice {
+    const zones: ZoneVoice[] = [];
     const merger = context.createGain();
     let active = 0;   // 鳴っているボイスの数
 
@@ -31,7 +38,10 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 
             const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);
 	    const { filter, panner } = create_filter_panner(context, p);
-	    source.connect(amp);
+            // 排他クラス用のゲイン。ソースの直後に置くので、止めればエフェクト送りも一緒に消える
+            const cut = context.createGain();
+            source.connect(cut);
+            cut.connect(amp);
             amp.connect(filter);
             filter.connect(panner);
             const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
@@ -71,7 +81,7 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 	    	    		
             active++;
             source.onended = () => {
-                source.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
+		source.disconnect(); cut.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
                 // チャンネル共有ノード(bend / pan / vib)からの接続を外す。外さないと、鳴らした音符の数だけ接続が溜まる
                 dispose.forEach(f => f());
 		
@@ -83,7 +93,22 @@ export default function create_voice(context: AudioContext, note: number, vel: n
 	    };
             source.start(start_time);
             source.stop(end_time);   // 実時間で止める(start の第3引数は使わない)
+
+            // exclusive_class はインストゥルメント側だけの値。プリセット側の値は足さない
+            const ec = Number(iz.generators.exclusive_class ?? inst.global_zone?.generators.exclusive_class ?? 0);
+            let choked = false;
+            zones.push({
+                exclusive_class: ec, start_time, end_time,
+                choke: (time: number) => {
+                    if( choked || time >= end_time ) return;    // もう止めた、または自然に止まっている
+                    choked = true;
+                    const t = Math.max(time, start_time);
+                    cut.gain.setValueAtTime(1, t);
+                    cut.gain.linearRampToValueAtTime(0, t + CHOKE_FADE);
+                    source.stop(Math.min(end_time, t + CHOKE_FADE));   // stop は後から呼び直せる(最後の呼び出しが有効)
+                },
+            });
         }
     }
-    return merger;
+    return { output: merger, zones };
 }

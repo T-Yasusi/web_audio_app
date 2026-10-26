@@ -128,7 +128,7 @@ $ yarn run build    # TypeScript のコンパイルを含むビルド
 | 54   | Sample Mode                  	  	| ビットフラグ          | -             | 0      | 〇 |
 | 55   | (予約)                       	  	| -                     | -             | -      | -  |
 | 56   | Scale Tuning                 	  	| セント/キー           | 0 ~ 1200      | 100    | 〇 |
-| 57   | Exclusive Class              	  	| クラス番号            | 1 ~ 127       | 0(無効) | × |
+| 57   | Exclusive Class              	  	| クラス番号            | 1 ~ 127       | 0(無効) | 〇 |
 | 58   | Overriding Root Key          	  	| キー番号              | 0 ~ 127       | -1(無効) | 〇 |
 
 ## 使用素材
