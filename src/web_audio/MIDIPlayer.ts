@@ -71,6 +71,8 @@ class MIDIPlayer{
 	const start = calc_time(event.tick, this.time_table);
 
 	if( event.type === 'programChange' ) this.program[(event as MidiEvent).channel] = (event as MidiEvent).data;
+	else if( event.type === 'channelPressure' )
+	    this.channels[(event as MidiEvent).channel].update_pressure(start, (event as MidiEvent).data as number);
 	else if( event.type === 'note' ){
 	    const note = event as Note;
 	    const preset = this.find_preset(note);

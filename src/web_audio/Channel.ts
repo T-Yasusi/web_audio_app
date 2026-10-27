@@ -1,5 +1,5 @@
 import { SMOOTH } from './global_vals.ts'
-import { concave } from './util_funcs.ts'
+import { concave, depth } from './util_funcs.ts'
 
 export type ChannelState = {
     volume: number;
@@ -46,8 +46,17 @@ class Channel{
         this.bend.offset.setTargetAtTime(cents, time, SMOOTH);
     }
 
+    update_vib(time: number){
+	this.vib.offset.setTargetAtTime(depth(this.state), time, SMOOTH);
+    }
+    update_pressure(time: number, value: number){
+	this.state.pressure = value;
+	this.update_vib(time);
+    }
+    
     change_state(time: number, cc: number, value: number){
-        if( cc === 6 && this.state.rpn_msb === 0 && this.state.rpn_lsb === 0 ){
+	if( cc === 1 ){ this.state.mod = value; this.update_vib(time); }
+        else if( cc === 6 && this.state.rpn_msb === 0 && this.state.rpn_lsb === 0 ){
             // RPN 0: ピッチベンドの幅(半音)。bend_range を更新し、現在のベンド量を再計算する
             this.state.bend_range = value;
             this.update_bend(time, this.state.bend);
@@ -69,7 +78,8 @@ class Channel{
         this.state.expression = 127;
         this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
         this.update_bend(time, 0);
-
+	this.update_vib(time);
+	
         this.state.rpn_msb = 127;
         this.state.rpn_lsb = 127;
         this.state.reverb = 0;
