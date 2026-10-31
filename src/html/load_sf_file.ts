@@ -1,4 +1,4 @@
-import read_riff from './../read_riff.ts'
+import read_riff from './../sf/read_riff.ts'
 import parseSF from './../sf/parse.ts'
 import manager from './../web_audio/manager.ts'
 

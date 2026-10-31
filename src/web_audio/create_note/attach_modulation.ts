@@ -3,8 +3,8 @@ import { timecents } from '../util_funcs.ts'
 type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode | null; vib_depth?: AudioNode; dispose?: (() => void)[] };
 
 // モジュレーションエンベロープと LFO をボイスにつなぐ。作ったノードを返す(終了時に disconnect する)
-export default function attach_modulation(context: AudioContext, p: Record<string, number>,
-					  t0: number, duration: number, t_end: number, target: Target) {
+export default function attach_modulation(context: AudioContext, p: Record<string, number>, t0: number, duration: number, t_end: number,
+					  target: Target) {
     const nodes: AudioNode[] = [];
 
     // src(-1〜1 または 0〜1)に量を掛けて、param に足し込む

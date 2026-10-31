@@ -1,5 +1,6 @@
-import type { Instrument, PresetZone, Preset, PresetInfo } from './types.ts'
-import type { RiffChunk } from '../read_riff.ts'
+import type { PresetInfo } from './parse_preset_list.ts'
+import type { Instrument, PresetZone, Preset } from './types.ts'
+import type { RiffChunk } from './read_riff.ts'
 import parse_zones from './parse_zones.ts'
 
 export default function parse_presets(preset_list: PresetInfo[], pbag: RiffChunk, pmod: RiffChunk, pgen: RiffChunk, insts: Instrument[]) {

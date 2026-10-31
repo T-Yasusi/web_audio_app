@@ -1,5 +1,5 @@
 import type { SFInfo } from './types.ts'
-import type { RiffChunk, RiffList } from '../read_riff.ts'
+import type { RiffChunk, RiffList } from './read_riff.ts'
 
 const STRING_FIELDS: Record<string, string> = {
     isng: 'sound_engine',

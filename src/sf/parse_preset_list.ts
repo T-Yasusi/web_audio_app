@@ -1,8 +1,18 @@
-import type { PresetInfo } from './types.ts'
-import type { RiffChunk } from '../read_riff.ts'
+import type { RiffChunk } from './read_riff.ts'
 import { getString, getWord, getDword } from './get_xxx.ts'
 
 const PHDR_SIZE = 38;
+
+export type PresetInfo = {
+    name: string;
+    MIDInumber: number;
+    bank: number;
+    bag_start: number;
+    bag_end: number;
+    library: number;
+    genre: number;
+    morphology: number;
+};
 
 export default function parse_preset_list(phdr: RiffChunk) : PresetInfo[] {
     const rec = phdr.data;

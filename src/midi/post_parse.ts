@@ -29,8 +29,8 @@ function build_track(events: Event[]) {
     for( const event of events ){
         last_tick = event.tick;
 	const ev = event as MidiEvent;
-        if( event.event !== 'midi' ) continue;
-
+	if( event.event !== 'midi' && event.event !== 'SysEx' ) continue;
+	
         if( event.type === 'noteOn' || event.type === 'noteOff' ){
             const key = ev.channel * 128 + (ev.data as [ number, number ])[0];
 

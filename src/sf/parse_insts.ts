@@ -1,6 +1,12 @@
-import type { Inst, InstZone, Instrument, Sample } from './types.ts'
-import type { RiffChunk } from '../read_riff.ts'
+import type { InstZone, Instrument, Sample } from './types.ts'
+import type { RiffChunk } from './read_riff.ts'
 import parse_zones from './parse_zones.ts'
+
+type Inst = {
+    name: string;
+    bag_start: number;
+    bag_end: number;
+}
 
 export default function parse_insts(inst_list: Inst[], ibag: RiffChunk, imod: RiffChunk, igen: RiffChunk, samples: Sample[]){
     return inst_list.map((inst: Inst) => {

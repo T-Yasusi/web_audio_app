@@ -1,4 +1,4 @@
-import type { RiffChunk } from '../read_riff.ts'
+import type { RiffChunk } from './read_riff.ts'
 import { getString, getWord } from './get_xxx.ts'
 
 const INST_SIZE = 22; // achInstName[20] + wInstBagNdx

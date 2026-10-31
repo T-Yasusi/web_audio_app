@@ -1,5 +1,5 @@
 import type { Sample } from './types.ts'
-import type { RiffChunk, RiffList } from '../read_riff.ts'
+import type { RiffChunk, RiffList } from './read_riff.ts'
 import { getString, getDword, getWord, getChar } from './get_xxx.ts'
 
 const SHDR_SIZE = 46;

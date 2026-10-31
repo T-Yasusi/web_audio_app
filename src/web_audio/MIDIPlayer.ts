@@ -1,14 +1,15 @@
-import type { MidiFile, Event, Note, MidiEvent } from '../midi/types.ts'
+import type { MidiFile, Event, Note, MidiEvent, SysExEvent } from '../midi/types.ts'
 import type { Preset } from '../sf/types.ts'
 import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
 import build_table from './build_table.ts'
 import calc_time from './calc_time.ts'
+import is_system_reset from './is_system_reset.ts'
 
 const LEAD = 0.05;        // 再生開始までの余裕(秒)
-import create_voice from './create_voice.ts'
-import type { ZoneVoice } from './create_voice.ts'
+import create_note from './create_note.ts'
+import type { ZoneVoice } from './create_note.ts'
 
 class MIDIPlayer{
     context: AudioContext
@@ -65,11 +66,19 @@ class MIDIPlayer{
             this.exclusive.set(key, list);
         }
     }
+
+    apply_sysex(event: SysExEvent, start: number){
+	if( !is_system_reset(event.data) ) return;
+	for( const ch of this.channels ) ch.reset_all(start);
+	this.program.fill(0);
+	this.bank.fill(0);
+    }
     
     apply_event(index: number){
 	const event = this.events[index];
 	const start = calc_time(event.tick, this.time_table);
 
+//	console.log('start :', start, ' Event :', event);
 	if( event.type === 'programChange' ) this.program[(event as MidiEvent).channel] = (event as MidiEvent).data;
 	else if( event.type === 'channelPressure' )
 	    this.channels[(event as MidiEvent).channel].update_pressure(start, (event as MidiEvent).data as number);
@@ -80,15 +89,16 @@ class MIDIPlayer{
 	    const stop = calc_time(note.endTick, this.time_table);
 
             const t0 = start + this.base_offset - this.time_offset;
-            const voice = create_voice(this.context, note.midi_note, note.velocity,
-                                       t0, stop - start,
-                                       preset, this.channels[note.channel],
-                                       this.reverb, this.chorus,
-                                       { release_scale: note.release_scale, soft: note.soft });
+            const { output, zones } = create_note(this.context, note.midi_note, note.velocity,
+						  t0, stop - start,
+						  preset, this.channels[note.channel],
+						  this.reverb, this.chorus,
+						  { release_scale: note.release_scale, soft: note.soft });
 	    
-            voice.output.connect(this.channels[note.channel].input);
-            this.register_exclusive(note.channel, voice.zones, t0);
+            output.connect(this.channels[note.channel].input);
+            this.register_exclusive(note.channel, zones, t0);
 	}
+	else if( event.event === 'SysEx' && event.type === '240' ) this.apply_sysex(event as SysExEvent, start);
 	else{
 	    const ev = event as MidiEvent;
 	    const data = ev.data as [ number, number ];

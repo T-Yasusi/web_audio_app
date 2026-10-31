@@ -17,12 +17,6 @@ export type Sample = {
     sample_type: number;
 }
 
-export type Inst = {
-    name: string;
-    bag_start: number;
-    bag_end: number;
-}
-
 export type Modulator = {
     mod_src_oper: number;
     gen_name: string;
@@ -30,6 +24,23 @@ export type Modulator = {
     mod_amt_src_oper: number;
     mod_trans_oper: number;
 }
+
+export type Instrument = {
+    name: string;
+    zones: InstZone[];
+    global_zone?: InstZone;
+}
+
+export type Preset = {
+    name: string;
+    MIDInumber: number;
+    bank: number;
+    zones: PresetZone[];
+    global_zone?: PresetZone;
+    library: number;
+    genre: number;
+    morphology: number;
+};
 
 export type InstZone = {
     generators: Record<string, number | [ number, number ] | undefined>;
@@ -43,30 +54,3 @@ export type PresetZone = {
     instrument?: Instrument;
 }
 
-export type Instrument = {
-    name: string;
-    zones: InstZone[];
-    global_zone?: InstZone;
-}
-
-export type PresetInfo = {
-    name: string;
-    MIDInumber: number;
-    bank: number;
-    bag_start: number;
-    bag_end: number;
-    library: number;
-    genre: number;
-    morphology: number;
-};
-
-export type Preset = {
-    name: string;
-    MIDInumber: number;
-    bank: number;
-    zones: PresetZone[];
-    global_zone?: PresetZone;
-    library: number;
-    genre: number;
-    morphology: number;
-};
