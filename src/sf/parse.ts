@@ -5,6 +5,7 @@ import parse_insts from './parse_insts.ts';
 import parse_preset_list from './parse_preset_list.ts';
 import parse_presets from './parse_presets.ts';
 
+import type { SFFile } from './types.ts'
 import type { RiffNode, RiffChunk, RiffList } from './read_riff.ts'
 
 // 子チャンクを type(葉ならID、LISTなら形式タイプ)で引く
@@ -14,7 +15,7 @@ function get_child(parent: RiffList, type: string) : RiffNode {
     return child;
 }
 
-export default function parse_sf2(riff: RiffList) {
+export default function parse_sf2(riff: RiffList) : SFFile {
     if( riff.type !== 'sfbk' ) throw new Error('SoundFontファイルではありません');
 
     const info = parse_info(get_child(riff, 'INFO') as RiffList);

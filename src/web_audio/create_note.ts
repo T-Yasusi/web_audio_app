@@ -62,22 +62,21 @@ export default function create_note(context: AudioContext, note: number, vel: nu
             attach_modulation(context, p, start_time, duration, end_time,
 			      { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
 
-	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
-		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
+	    const connect_send = (send_gen: number, input: AudioNode) => {
 		const send = context.createGain();
 		send.gain.value = send_gen;
 		panner.connect(send);
-		send.connect(reverb.input);
+		send.connect(input);
 		dispose.push(()=> send.disconnect());
 	    }
 	    
+	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
+		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
+		connect_send(send_gen, reverb.input);
+	    }
 	    if( p.chorus_effect_send > 0 || channel.state.chorus > 0 ){
 		const send_gen = p.chorus_effect_send / 1000 + channel.state.chorus / 127 * CHORUS_CC_MAX;
-		const send = context.createGain();
-		send.gain.value = send_gen;
-		panner.connect(send);
-		send.connect(chorus.input);
-		dispose.push(()=> send.disconnect());
+		connect_send(send_gen, chorus.input);
 	    }
 	    	    		
             active++;

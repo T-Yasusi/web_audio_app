@@ -63,32 +63,33 @@ class MIDIPlayer{
 	this.program.fill(0);
 	this.bank.fill(0);
     }
+
+    apply_note(note: Note, start: number){
+	const preset = this.find_preset(note);
+	if( !preset ) return;
+	const duration = calc_time(note.endTick, this.time_table) - start;
+	
+        const t0 = start + this.base_offset - this.time_offset;
+        const { output, zones } = create_note(this.context, note.midi_note, note.velocity,
+					      t0, duration,
+					      preset, this.channels[note.channel],
+					      this.reverb, this.chorus,
+					      { release_scale: note.release_scale, soft: note.soft });
+	    
+        output.connect(this.channels[note.channel].input);
+        this.register_exclusive(note.channel, zones, t0);
+    }
     
     apply_event(index: number){
 	const event = this.events[index];
 	const start = calc_time(event.tick, this.time_table);
 
-//	console.log('start :', start, ' Event :', event);
-	if( event.type === 'programChange' ) this.program[(event as MidiEvent).channel] = (event as MidiEvent).data;
+	//	console.log('start :', start, ' Event :', event);
+	if( event.type === 'note' ) this.apply_note(event as Note, start);
+	else if( event.event === 'SysEx' && event.type === '240' ) this.apply_sysex(event as SysExEvent, start);
+	else if( event.type === 'programChange' ) this.program[(event as MidiEvent).channel] = (event as MidiEvent).data;
 	else if( event.type === 'channelPressure' )
 	    this.channels[(event as MidiEvent).channel].update_pressure(start, (event as MidiEvent).data as number);
-	else if( event.type === 'note' ){
-	    const note = event as Note;
-	    const preset = this.find_preset(note);
-	    if( !preset ) return;
-	    const stop = calc_time(note.endTick, this.time_table);
-
-            const t0 = start + this.base_offset - this.time_offset;
-            const { output, zones } = create_note(this.context, note.midi_note, note.velocity,
-						  t0, stop - start,
-						  preset, this.channels[note.channel],
-						  this.reverb, this.chorus,
-						  { release_scale: note.release_scale, soft: note.soft });
-	    
-            output.connect(this.channels[note.channel].input);
-            this.register_exclusive(note.channel, zones, t0);
-	}
-	else if( event.event === 'SysEx' && event.type === '240' ) this.apply_sysex(event as SysExEvent, start);
 	else{
 	    const ev = event as MidiEvent;
 	    const data = ev.data as [ number, number ];

@@ -42,7 +42,7 @@ export default function parse_samples(shdr: RiffChunk, sdta: RiffList) : Sample[
 
 function decode_samples(view: DataView, start: number, end: number, sm24?: RiffChunk){
     const n = end - start;
-    const out = new Float32Array(n);
+    const out = new Float32Array(new ArrayBuffer(4*n));
     if( sm24 ){
         for( let k=0; k<n; k++ ){
             const hi = view.getInt16(2*(start+k), true);  // 上位16bit(符号付き)
