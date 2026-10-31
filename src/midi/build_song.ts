@@ -1,6 +1,7 @@
 import type { MidiInfo, MidiFile } from './types.ts'
-import type { Event, MidiEvent, Note } from './types.ts'
+import type { Event, MidiEvent, Note, MetaEvent } from './types.ts'
 import adjust_note_ends from './adjust_note_ends.ts'
+import calc_time from '../web_audio/calc_time.ts'
 
 const DEFAULT_TEMPO = 500000;   // 120BPM (SMFの既定値)
 
@@ -16,9 +17,29 @@ export default function build_song(json: MidiInfo) : MidiFile{
 
     // ノートは全トラックから作る。MIDIイベントのないトラック(テンポ専用トラックなど)は除く
     const tracks = json.tracks.map(build_track).filter((t: Event[]) => t.length > 0);
+    const events = tracks.flat().sort((a: Event, b: Event) => a.tick - b.tick);;
 
+    const ticks: number[] = [], secs: number[] = [], rates: number[] = [];
+    let sec = 0;
+
+    for( let i = 0; i < tempos.length; i++ ){
+        const t1 = tempos[i] as MetaEvent;
+        const t2 = tempos[i-1] as MetaEvent;
+        if( i > 0 ) sec += (t1.tick - t2.tick) * (t2.data as number) / json.division / 1e6;
+        ticks.push(t1.tick);
+        secs.push(sec);
+        rates.push((t1.data as number) / json.division / 1e6);
+    }
+
+    let time = 0;
+    for( const event of events ){
+        const start = calc_time(event.tick, { ticks, secs, rates });
+        const end = (event as Note).endTick ? calc_time((event as Note).endTick, { ticks, secs, rates }) : 0;
+        time = Math.max(start, end, time);	
+    }
+    
     adjust_note_ends(json.tracks.flat(), tracks.flat());   // 元のイベント(CC)と、組み立てたノートを渡す
-    return { format: json.format, division: json.division, tempos, tracks };
+    return { format: json.format, division: json.division, tempos, events, time_table: { ticks, secs, rates }, duration: time };
 }
 
 function build_track(events: Event[]) {

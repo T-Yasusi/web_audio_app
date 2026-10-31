@@ -1,6 +1,6 @@
 // テスト用 MIDI を TS で作る。パース済みの MidiInfo を組み立てて、本番と同じ post_parse に通す
 import type { MidiInfo, MidiFile, Event } from './types.ts'
-import post_parse from './post_parse.ts'
+import build_song from './build_song.ts'
 
 const D = 480;   // 四分音符 = 480 tick。beat(n) で拍を tick に変換する
 const beat = (n: number) => Math.round(n * D);
@@ -23,7 +23,7 @@ const note = (b: number, len: number, ch: number, n: number, vel = 100): Event[]
 function build(events: Event[]): MidiFile {
     events.sort((a, b) => a.tick - b.tick);
     const info: MidiInfo = { format: 0, ntrack: 1, division: D, tracks: [events] };
-    return post_parse(info);
+    return build_song(info);
 }
 
 // CC1: 長い音の途中でモジュレーションホイールを上げ下げする(ビブラート)

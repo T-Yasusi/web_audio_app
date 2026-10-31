@@ -3,13 +3,16 @@ export type MidiInfo = {
     ntrack: number;
     division: number;
     tracks: Array<Array<Event>>;
+
 }
 
 export type MidiFile = {
     format: number;
     division: number;
     tempos: Event[];
-    tracks: Array<Array<Event>>;
+    events: Event[];
+    time_table: { ticks: number[], secs: number[], rates: number[] };
+    duration: number;
 }
 
 export type MidiEvent = {

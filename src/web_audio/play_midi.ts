@@ -17,7 +17,7 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
     manager.player = player;
     manager.finished = false;
     if( manager.timer !== undefined ) clearInterval(manager.timer);   // 前の曲のタイマーが残らないように
-    const total = player.duration();
+    const total = player.duration;
 
     function scheduling() {
         const song_now = context.currentTime + player.time_offset;   // 曲の何秒目か

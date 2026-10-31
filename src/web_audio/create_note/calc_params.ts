@@ -65,7 +65,8 @@ export default function calc_params(iz: InstZone, inst: Instrument, pz: PresetZo
         p.release_mod_env += tc;
     }
     // ソフトペル: カットオフを下げる(音量は下の base に掛ける)
-    if( opts.soft ) p.init_filter_Fc = Math.max(1500, p.init_filter_Fc + SOFT_CUTOFF);
-
+    if( opts.soft ){
+	p.init_filter_Fc = Math.max(1500, p.init_filter_Fc + SOFT_CUTOFF);
+    }
     return p;
 }

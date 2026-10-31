@@ -1,19 +1,17 @@
 import { timecents } from '../util_funcs.ts'
 
-type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode | null; vib_depth?: AudioNode; dispose?: (() => void)[] };
+type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode; vib_depth?: AudioNode; dispose: (() => void)[] };
 
 // モジュレーションエンベロープと LFO をボイスにつなぐ。作ったノードを返す(終了時に disconnect する)
 export default function attach_modulation(context: AudioContext, p: Record<string, number>, t0: number, duration: number, t_end: number,
 					  target: Target) {
-    const nodes: AudioNode[] = [];
-
     // src(-1〜1 または 0〜1)に量を掛けて、param に足し込む
     const route = (src: AudioNode, amount: number, param: AudioParam) => {
         const g = context.createGain();
         g.gain.value = amount;
         src.connect(g);
         g.connect(param);
-        nodes.push(g);
+	target.dispose.push(()=> g.disconnect());
     };
 
     // モジュレーションエンベロープ(0〜1)
@@ -23,44 +21,42 @@ export default function attach_modulation(context: AudioContext, p: Record<strin
         schedule_mod_env(env.offset, t0, duration, p);
         env.start(t0);
         env.stop(t_end);
-        nodes.push(env);
+	target.dispose.push(()=> env.disconnect());
         if( p.mod_env_to_pitch !== 0 ) route(env, p.mod_env_to_pitch, target.detune);
         if( p.mod_env_to_filter_Fc !== 0 ) route(env, p.mod_env_to_filter_Fc, target.cutoff);
     }
 
     // モジュレーション LFO: ピッチ、フィルタ、音量
-    if( p.mod_lfo_to_pitch !== 0 || p.mod_lfo_to_filter_Fc !== 0 || target.trem ){
+    if( p.mod_lfo_to_pitch !== 0 || p.mod_lfo_to_filter_Fc !== 0 || p.mod_lfo_to_volume !==0 ){
         const lfo = make_lfo(context, t0, t_end, p.delay_mod_lfo, p.freq_mod_lfo);
-        nodes.push(lfo);
+	target.dispose.push(()=> lfo.disconnect());
         if( p.mod_lfo_to_pitch !== 0 ) route(lfo, p.mod_lfo_to_pitch, target.detune);
         if( p.mod_lfo_to_filter_Fc !== 0 ) route(lfo, p.mod_lfo_to_filter_Fc, target.cutoff);
-        if( target.trem ){
+        if( p.mod_lfo_to_volume !== 0 ){
             const shaper = context.createWaveShaper();
             shaper.curve = tremolo_curve(p.mod_lfo_to_volume);
             target.trem.gain.value = 0;              // WaveShaper の出力が、そのままゲインになる
             lfo.connect(shaper);
             shaper.connect(target.trem.gain);
-            nodes.push(shaper);
+	    target.dispose.push(()=> shaper.disconnect());	
         }
     }
 
     if( p.vib_lfo_to_pitch !== 0 || target.vib_depth ){
 	const lfo = make_lfo(context, t0, t_end, p.delay_vib_lfo, p.freq_vib_lfo);
-	nodes.push(lfo);
+	target.dispose.push(()=> lfo.disconnect());
 	if( p.vib_lfo_to_pitch !== 0 ) route(lfo, p.vib_lfo_to_pitch, target.detune);
 	if( target.vib_depth ){
             const g = context.createGain();
             g.gain.value = 0;                  // 実効ゲイン = チャンネルの深さ(セント)
             target.vib_depth.connect(g.gain);  // 深さを、ゲインに信号として足す
             const depth_src = target.vib_depth;
-            target.dispose?.push(() => depth_src.disconnect(g.gain));   // ボイス終了時に、チャンネル側から外す
+            target.dispose.push(() => depth_src.disconnect(g.gain));   // ボイス終了時に、チャンネル側から外す
             lfo.connect(g);
             g.connect(target.detune);
-            nodes.push(g);
+	    target.dispose.push(()=> g.disconnect());
 	}
     }
-    
-    return nodes;
 }
 
 // SF2 の LFO は三角波。ディレイの間は出力0で、その後ゼロから立ち上がる

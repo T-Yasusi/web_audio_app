@@ -3,7 +3,6 @@ import type { Preset } from '../sf/types.ts'
 import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
-import build_table from './build_table.ts'
 import calc_time from './calc_time.ts'
 import is_system_reset from './is_system_reset.ts'
 
@@ -24,28 +23,19 @@ class MIDIPlayer{
     channels: Array<Channel>;
     base_offset: number;
     time_offset = 0;
+    duration: number; // 曲の長さ
     exclusive: Map<number, ZoneVoice[]> = new Map();   // キー: チャンネル * 128 + 排他クラス
     
     constructor(context: AudioContext, gain: GainNode, presets: Preset[], midi_json: MidiFile){
 	this.context = context
 	this.presets = new Map(presets.map((p: Preset) => [p.bank * 128 + p.MIDInumber, p]));
-	this.time_table = build_table(midi_json);
-	this.events = midi_json.tracks.flat().sort((a: Event, b: Event) => a.tick - b.tick);
+	this.time_table = midi_json.time_table;
+	this.duration = midi_json.duration;
+	this.events = midi_json.events;
 	this.channels = Array.from({ length: 16 }, () => new Channel(context, gain) );
 	this.reverb = new Reverb(context, gain);
 	this.chorus = new Chorus(context, gain);
 	this.base_offset = context.currentTime + LEAD;
-    }
-
-    duration(){
-	let max = 0;
-	for( const event of this.events ){
-	    const time = calc_time(event.tick, this.time_table);
-//	    const end = (event as Note).endTick ? calc_time((event as Note).endTick, this.time_table) : 0;
-	    //	    max = Math.max(time, end, max);
-	    max = Math.max(time, max);
-	}
-	return max;
     }
     
     find_preset(event: Note){

@@ -1,5 +1,5 @@
 import parseMIDI from './../midi/parse.ts'
-import post_parse from './../midi/post_parse.ts'
+import build_song from './../midi/build_song.ts'
 import manager from './../web_audio/manager.ts'
 
 export default async function load_midi_file(){
@@ -10,7 +10,7 @@ export default async function load_midi_file(){
 	const response = await fetch(midi_file.path);
 	const buffer = await response.arrayBuffer();
 	const bytes = new Uint8Array(buffer);
-	const midi_data = post_parse(parseMIDI(bytes));
+	const midi_data = build_song(parseMIDI(bytes));
 	
 	manager.midi_files.push(midi_data);
 	

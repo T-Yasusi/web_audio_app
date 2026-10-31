@@ -7,20 +7,16 @@ const slider = document.getElementById('tune_slider') as HTMLInputElement;
 
 export default function set_tune_slider(player?: MIDIPlayer){
     if( !player ) return;
-    
-    let max = player.duration();
     if( !player.events[player.index] ) return;
     
     const time = calc_time(player.events[player.index].tick, player.time_table);
     
-    slider.value = (time/max).toString();
+    slider.value = (time/player.duration).toString();
 }
 
 slider.addEventListener('change', ()=>{
-
     if( !manager.player ) return;
-    const duration = manager.player.duration();
-    const target_time = duration*Number(slider.value);
+    const target_time = manager.player.duration*Number(slider.value);
 
     manager.player.time_offset = target_time - manager.player.context.currentTime;
 
@@ -31,5 +27,4 @@ slider.addEventListener('change', ()=>{
 	    break;
 	}
     }
-
 });

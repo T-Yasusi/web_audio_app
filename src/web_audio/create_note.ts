@@ -40,26 +40,27 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 	    const { filter, panner } = create_filter_panner(context, p);
             // 排他クラス用のゲイン。ソースの直後に置くので、止めればエフェクト送りも一緒に消える
             const cut = context.createGain();
+	    const trem = context.createGain();
             source.connect(cut);
             cut.connect(amp);
             amp.connect(filter);
             filter.connect(panner);
-            const trem = p.mod_lfo_to_volume !== 0 ? context.createGain() : null;
-	    if( trem ){
-		panner.connect(trem);
-		trem.connect(merger);
-	    }
-	    else panner.connect(merger);
+	    panner.connect(trem);
+	    trem.connect(merger);
 	    
             channel.bend.connect(source.detune);
             channel.pan.connect(panner.pan);
             const dispose: (() => void)[] = [
-                () => channel.bend.disconnect(source.detune),
-                () => channel.pan.disconnect(panner.pan),
+		() => {
+		    source.disconnect(); cut.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
+		    channel.bend.disconnect(source.detune);
+		    channel.pan.disconnect(panner.pan);
+		    trem.disconnect();
+		}
             ];
 
-            const nodes = attach_modulation(context, p, start_time, duration, end_time,
-					    { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
+            attach_modulation(context, p, start_time, duration, end_time,
+			      { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
 
 	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
 		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
@@ -67,7 +68,7 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 		send.gain.value = send_gen;
 		panner.connect(send);
 		send.connect(reverb.input);
-		nodes.push(send);
+		dispose.push(()=> send.disconnect());
 	    }
 	    
 	    if( p.chorus_effect_send > 0 || channel.state.chorus > 0 ){
@@ -76,16 +77,13 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 		send.gain.value = send_gen;
 		panner.connect(send);
 		send.connect(chorus.input);
-		nodes.push(send);
+		dispose.push(()=> send.disconnect());
 	    }
 	    	    		
             active++;
             source.onended = () => {
-		source.disconnect(); cut.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
                 // チャンネル共有ノード(bend / pan / vib)からの接続を外す。外さないと、鳴らした音符の数だけ接続が溜まる
                 dispose.forEach(f => f());
-		nodes.forEach(a => a.disconnect());
-		if( trem ) trem.disconnect();
 
                 if( --active === 0 ){
 		    merger.disconnect();
