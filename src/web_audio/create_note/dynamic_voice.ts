@@ -16,6 +16,8 @@ export function set_param(param: AudioParam, value: number, time: number | null)
 export default class DynamicVoice {
     private mods: Modulator[];
     private keys = new Set<string>();
+    private dests_by_key = new Map<string, Set<string>>();   // ソースのキー → それが影響する宛先
+    private last: Record<string, number> = {};               // 宛先ごとに、最後に反映した値
     private targets: Record<string, Target>;
     private note: number;
     private vel: number;
@@ -28,7 +30,10 @@ export default class DynamicVoice {
         for( const m of this.mods )
             for( const w of [m.mod_src_oper, m.mod_amt_src_oper] ){
                 const k = source_key(parse_source(w));
-                if( k ) this.keys.add(k);
+                if( !k ) continue;
+                this.keys.add(k);
+                if( !this.dests_by_key.has(k) ) this.dests_by_key.set(k, new Set());
+                this.dests_by_key.get(k)!.add(m.gen_name);
             }
     }
 
@@ -37,10 +42,14 @@ export default class DynamicVoice {
     // このコントローラ(source_key の値)が変わったとき、この音を計算し直す必要があるか
     uses(key: string) { return this.keys.has(key); }
 
-    // コントローラの現在値から、宛先の値を計算し直して反映する
-    update(time: number | null, ctl: Controllers) {
+    // コントローラの現在値から、宛先の値を計算し直して反映する。
+    // key があれば、そのソースが影響する宛先だけを対象にする。値が変わらなければ反映しない(time が null のときは必ず反映)
+    update(time: number | null, ctl: Controllers, key?: string) {
+        const names = key === undefined ? undefined : this.dests_by_key.get(key);
+        if( key !== undefined && !names ) return;
         const sum: Record<string, number> = {};
         for( const m of this.mods ){
+            if( names && !names.has(m.gen_name) ) continue;
             const s = dynamic_value(parse_source(m.mod_src_oper), this.note, this.vel, ctl);
             const a = dynamic_value(parse_source(m.mod_amt_src_oper), this.note, this.vel, ctl);
             if( s === null || a === null || Number.isNaN(s) || Number.isNaN(a) ) continue;
@@ -48,8 +57,13 @@ export default class DynamicVoice {
             if( m.mod_trans_oper === 2 ) out = Math.abs(out);
             sum[m.gen_name] = (sum[m.gen_name] ?? 0) + out;
         }
-        for( const [name, t] of Object.entries(this.targets) )
-            t.apply(Math.min(t.max, Math.max(t.min, t.base + (sum[name] ?? 0))), time);   // 足してから範囲に収める
+        for( const [name, t] of Object.entries(this.targets) ){
+            if( names && !names.has(name) ) continue;
+            const value = Math.min(t.max, Math.max(t.min, t.base + (sum[name] ?? 0)));   // 足してから範囲に収める
+            if( time !== null && this.last[name] === value ) continue;
+            this.last[name] = value;
+            t.apply(value, time);
+        }
     }
 }
 

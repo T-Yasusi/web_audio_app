@@ -1,11 +1,8 @@
 import { SMOOTH } from './global_vals.ts'
-import { concave } from './util_funcs.ts'
 import type { Controllers } from './create_note/modulator.ts'
 import type DynamicVoice from './create_note/dynamic_voice.ts'
 
 export type ChannelState = {
-    volume: number;
-    expression: number;
     bend: number;
     bend_range: number;
     rpn_msb: number;
@@ -29,12 +26,8 @@ class Channel{
 	this.tune = context.createConstantSource();
         this.tune.offset.value = 0;
         this.tune.start();
-        this.state = { volume: 100, expression: 127,
-                       bend: 0, bend_range: 2, rpn_msb: 127, rpn_lsb: 127,
-                       pressure: 0,
+        this.state = { bend: 0, bend_range: 2, rpn_msb: 127, rpn_lsb: 127, pressure: 0,
 		       coarse_tune: 0, fine_tune: 0, fine_msb: 64, fine_lsb: 0 };
-        // state と実際のゲインを一致させる(CC7 が来るまで食い違わないように)
-        this.input.gain.value = concave(this.state.volume) * concave(this.state.expression);
         this.input.connect(output);
 	this.cc[7] = 100; this.cc[10] = 64; this.cc[11] = 127;   // 既定値(音量 100、パン中央、エクスプレッション最大)
     }
@@ -51,7 +44,7 @@ class Channel{
     private notify(time: number, key: string){
         if( this.voices.size === 0 ) return;
         const ctl = this.controllers();
-        for( const v of this.voices ) if( v.uses(key) ) v.update(time, ctl);
+        for( const v of this.voices ) if( v.uses(key) ) v.update(time, ctl, key);
     }
     
     update_bend(time: number, value: number){
@@ -73,10 +66,7 @@ class Channel{
         this.notify(time, `cc:${cc}`);
 	// CC1(モジュレーションホイール)は、モジュレータ経由で音ごとに反映する(DynamicVoice)
 	if( cc === 6 || cc === 38 ) this.data_entry(time, cc, value);
-        else if( cc === 7 || cc === 11 ){
-            if( cc === 7 ) this.state.volume = value; else this.state.expression = value;
-            this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
-        }
+	// CC7(音量)、CC11(エクスプレッション)も、モジュレータ経由で、音ごとの減衰量として反映する(DynamicVoice)
 	// CC10(パン)は、モジュレータ経由で音ごとに反映する(DynamicVoice)
 	// CC91(リバーブ)、CC93(コーラス)は、モジュレータ経由で音ごとに反映する(DynamicVoice)
         else if( cc === 101 ) this.state.rpn_msb = value;
@@ -93,13 +83,12 @@ class Channel{
             this.state.fine_tune = (((this.state.fine_msb << 7) | this.state.fine_lsb) - 8192) / 8192 * 100;
 	    this.update_tuning(time);
 	}
-	else if( rpn_lsb === 2 && cc === 6 ) this.state.coarse_tune = value - 64;
+	else if( rpn_lsb === 2 && cc === 6 ){ this.state.coarse_tune = value - 64; this.update_tuning(time); }
     }
     
     reset_state(time: number){
         // コントローラのリセット(ボリュームとパンは戻さない)
-        this.state.expression = 127;
-        this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
+	this.cc[11] = 127; this.notify(time, 'cc:11');   // エクスプレッションを最大に
         this.update_bend(time, 0);
         // モジュレーションホイールとプレッシャーを戻す
         this.cc[1] = 0; this.notify(time, 'cc:1');
@@ -110,7 +99,7 @@ class Channel{
     }
 
     reset_all(time: number){
-	this.state.volume = 100;
+	this.cc[7] = 100; this.notify(time, 'cc:7');     // 音量を既定値に
 	this.state.bend_range = 2;
 	this.state.coarse_tune = 0; this.state.fine_tune = 0;     // RPN 1/2 を入れた場合
 	this.state.fine_msb = 64;   this.state.fine_lsb = 0;
