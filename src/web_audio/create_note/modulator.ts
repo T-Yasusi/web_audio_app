@@ -34,6 +34,9 @@ export function curve_value(x: number, s: Source): number {
     return Math.sign(t) * f(Math.abs(t));     // 原点について対称
 }
 
+// コントローラの現在値(チャンネルが持つ)
+export type Controllers = { cc: number[]; bend: number; pressure: number; bend_range: number };   // bend: -8192〜8191
+
 // ---- 静的に決まるソース(ノートオンの時点で値が確定するもの) -----------------------------
 const GC_NONE = 0, GC_VELOCITY = 2, GC_KEY = 3;
 
@@ -43,6 +46,31 @@ function static_value(s: Source, note: number, vel: number): number | null {
     if( s.index === GC_NONE ) return 1;                      // ソースなし: 値は 1
     if( s.index === GC_VELOCITY ) return curve_value(vel / 127, s);
     if( s.index === GC_KEY ) return curve_value(note / 127, s);
+    return null;
+}
+
+// 動的なソース(鳴っている間に値が変わるもの)。CC、チャンネルプレッシャー(13)、ピッチベンド(14)、ベンドレンジ(16)
+const GC_PRESSURE = 13, GC_BEND = 14, GC_BEND_RANGE = 16;
+const is_dynamic = (s: Source) => s.cc || s.index === GC_PRESSURE || s.index === GC_BEND || s.index === GC_BEND_RANGE;
+const is_static = (s: Source) => !s.cc && (s.index === GC_NONE || s.index === GC_VELOCITY || s.index === GC_KEY);
+
+// ソースが変わったことを知らせるためのキー。静的なソース(ソースなし、ベロシティ、キー番号)は null
+export function source_key(s: Source): string | null {
+    if( s.cc ) return `cc:${s.index}`;
+    if( s.index === GC_PRESSURE ) return 'pressure';
+    if( s.index === GC_BEND ) return 'bend';
+    if( s.index === GC_BEND_RANGE ) return 'bend_range';
+    return null;
+}
+
+// 静的なものも動的なものも含めて、ソースの値を返す。未対応のソース(ポリプレッシャー、リンクなど)は null
+export function dynamic_value(s: Source, note: number, vel: number, ctl: Controllers): number | null {
+    const v = static_value(s, note, vel);
+    if( v !== null ) return v;
+    if( s.cc ) return curve_value((ctl.cc[s.index] ?? 0) / 127, s);
+    if( s.index === GC_PRESSURE ) return curve_value(ctl.pressure / 127, s);
+    if( s.index === GC_BEND ) return curve_value((ctl.bend + 8192) / 16384, s);
+    if( s.index === GC_BEND_RANGE ) return curve_value(ctl.bend_range / 127, s);
     return null;
 }
 
@@ -75,16 +103,30 @@ function override(base: Modulator[], over: Modulator[] = []) {
     return [...map.values()];
 }
 
+// このゾーンに効くモジュレータの全体: 既定 ← インストのグローバルゾーン ← ゾーン(同じものを置き換える)に、
+// プリセットのグローバルゾーン ← ゾーンを加える(置き換えではなく加算)
+function merged_modulators(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset) {
+    const inst_mods = override(override(DEFAULT_MODULATORS, inst.global_zone?.modulators), iz.modulators);
+    const preset_mods = override(preset.global_zone?.modulators ?? [], pz.modulators);
+    return [...inst_mods, ...preset_mods];
+}
+
+// 動的なソースを持つモジュレータのうち、宛先が dests に含まれるもの(両方のソースが対応済みで、少なくとも一方が動的)
+export function dynamic_modulators(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset, dests: Set<string>) {
+    return merged_modulators(iz, inst, pz, preset).filter(m => {
+        if( !m.gen_name || !dests.has(m.gen_name) ) return false;
+        if( m.mod_trans_oper !== 0 && m.mod_trans_oper !== 2 ) return false;
+        const s = parse_source(m.mod_src_oper), a = parse_source(m.mod_amt_src_oper);
+        const ok = (x: Source) => is_static(x) || is_dynamic(x);
+        return ok(s) && ok(a) && (is_dynamic(s) || is_dynamic(a));
+    });
+}
+
 // ノートオンの時点で確定するモジュレータの出力を、宛先ごとに合計して返す(単位は宛先の生成子と同じ)
 export function calc_static_mods(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset,
                                  note: number, vel: number): Record<string, number> {
-    // インストゥルメント: 既定 ← グローバルゾーン ← ゾーン の順に、同じものを置き換える
-    const inst_mods = override(override(DEFAULT_MODULATORS, inst.global_zone?.modulators), iz.modulators);
-    // プリセット: グローバルゾーン ← ゾーン。インストの結果には、置き換えではなく加算する
-    const preset_mods = override(preset.global_zone?.modulators ?? [], pz.modulators);
-
     const sum: Record<string, number> = {};
-    for( const m of [...inst_mods, ...preset_mods] ){
+    for( const m of merged_modulators(iz, inst, pz, preset) ){
         if( !m.gen_name ) continue;        // gen_name が空: 別のモジュレータへのリンク(未対応)
         if( m.mod_trans_oper !== 0 && m.mod_trans_oper !== 2 ) continue; // 未知の変換は無視する
 

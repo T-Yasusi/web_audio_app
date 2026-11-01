@@ -5,12 +5,14 @@ import createADSREnvelope from './create_note/createADSREnvelope.ts'
 import create_buffer_source from './create_note/create_buffer_source.ts'
 import create_filter_panner from './create_note/create_filter_panner.ts'
 import attach_modulation from './create_note/attach_modulation.ts'
+import DynamicVoice, { set_param, lazy_send } from './create_note/dynamic_voice.ts'
+import { dynamic_modulators } from './create_note/modulator.ts'
 
 import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
-import { REVERB_CC_MAX, CHORUS_CC_MAX } from './global_vals.ts'
 
+const DYNAMIC_DESTS = new Set(['pan', 'reverb_effect_send', 'chorus_effect_send']);   // 動的なモジュレータ経由に移した宛先
 const CHOKE_FADE = 0.02;   // 排他クラスで止めるときのフェードアウト(秒)
 
 // ゾーンごとの「止める」ためのハンドル。同じ排他クラスの次のノートが来たときに使う
@@ -50,36 +52,29 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 	    trem.connect(merger);
 	    
             channel.bend.connect(source.detune);
-            channel.pan.connect(panner.pan);
             const dispose: (() => void)[] = [
 		() => {
 		    source.disconnect(); cut.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
 		    channel.bend.disconnect(source.detune);
-		    channel.pan.disconnect(panner.pan);
 		    trem.disconnect();
 		}
             ];
 
+            // 動的なモジュレータ(CC など)の反映。移行済みの宛先だけをここで扱う(今はパンのみ)
+            const dyn = new DynamicVoice(dynamic_modulators(iz, inst, pz, preset, DYNAMIC_DESTS), {
+                pan: { base: p.pan, min: -500, max: 500, apply: (v, t) => set_param(panner.pan, v / 500, t) }, // 範囲は calc_params の GEN.pan と同じ
+		reverb_effect_send: { base: p.reverb_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, reverb.input, dispose) },
+                chorus_effect_send: { base: p.chorus_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, chorus.input, dispose) },
+            }, note, vel);
+            if( !dyn.empty ){
+                dyn.update(null, channel.controllers());     // 今の値で初期化する(すぐに反映)
+                channel.add_voice(dyn);
+                dispose.push(() => channel.remove_voice(dyn));
+            }
+	    
             attach_modulation(context, p, start_time, duration, end_time,
 			      { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
 
-	    const connect_send = (send_gen: number, input: AudioNode) => {
-		const send = context.createGain();
-		send.gain.value = send_gen;
-		panner.connect(send);
-		send.connect(input);
-		dispose.push(()=> send.disconnect());
-	    }
-	    
-	    if( p.reverb_effect_send > 0 || channel.state.reverb > 0 ){
-		const send_gen = p.reverb_effect_send / 1000 + channel.state.reverb / 127 * REVERB_CC_MAX;
-		connect_send(send_gen, reverb.input);
-	    }
-	    if( p.chorus_effect_send > 0 || channel.state.chorus > 0 ){
-		const send_gen = p.chorus_effect_send / 1000 + channel.state.chorus / 127 * CHORUS_CC_MAX;
-		connect_send(send_gen, chorus.input);
-	    }
-	    	    		
             active++;
             source.onended = () => {
                 // チャンネル共有ノード(bend / pan / vib)からの接続を外す。外さないと、鳴らした音符の数だけ接続が溜まる

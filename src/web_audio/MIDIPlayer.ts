@@ -83,22 +83,23 @@ class MIDIPlayer{
     apply_event(index: number){
 	const event = this.events[index];
 	const start = calc_time(event.tick, this.time_table);
-
+        const at = start + this.base_offset - this.time_offset;   // コンテキストの時刻(ノートの t0 と同じ基準)
+	
 	//	console.log('start :', start, ' Event :', event);
 	if( event.type === 'note' ) this.apply_note(event as Note, start);
-	else if( event.event === 'SysEx' && event.type === '240' ) this.apply_sysex(event as SysExEvent, start);
+	else if( event.event === 'SysEx' && event.type === '240' ) this.apply_sysex(event as SysExEvent, at);
 	else if( event.type === 'programChange' ) this.program[(event as MidiEvent).channel] = (event as MidiEvent).data;
 	else if( event.type === 'channelPressure' )
-	    this.channels[(event as MidiEvent).channel].update_pressure(start, (event as MidiEvent).data as number);
+	    this.channels[(event as MidiEvent).channel].update_pressure(at, (event as MidiEvent).data as number);
 	else{
 	    const ev = event as MidiEvent;
 	    const data = ev.data as [ number, number ];
 	    
 	    if( event.type === 'controlChange' && data[0] === 0 ) this.bank[ev.channel] = data[1];
 	    else if( event.type === 'pitchBend' )
-		this.channels[ev.channel].update_bend(start, ((data[1] << 7) | data[0]) - 8192); // -8192〜8191
+		this.channels[ev.channel].update_bend(at, ((data[1] << 7) | data[0]) - 8192); // -8192〜8191
 	    else if( event.type === 'controlChange' )
-		this.channels[ev.channel].change_state(start, data[0], data[1]);
+		this.channels[ev.channel].change_state(at, data[0], data[1]);
 	}
     }
 }
