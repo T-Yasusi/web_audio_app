@@ -1,4 +1,6 @@
+import { ATTEN_SCALE } from '../global_vals.ts'
 import type { InstZone, Instrument, Preset, PresetZone } from '../../sf/types.ts'
+import { calc_static_mods } from './modulator.ts'
 
 // const SOFT_GAIN = 10 ** (-3 / 20);   // CC67: 音量 -3dB(量は好みで調整)
 const SOFT_CUTOFF = -1200;           // CC67: カットオフを1オクターブ下げる(同上
@@ -44,14 +46,19 @@ const GEN: Record<string, [number, number, number]> = {
 };
 const GEN_ENTRIES = Object.entries(GEN);
 
-export default function calc_params(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset, note: number,
+export default function calc_params(iz: InstZone, inst: Instrument, pz: PresetZone, preset: Preset, note: number, vel: number,
 				    opts: { release_scale?: number; soft?: boolean } = {}) {
     const p: Record<string, number> = {};
     const k = 60 - note;
+    const mods = calc_static_mods(iz, inst, pz, preset, note, vel);   // モジュレータの出力(宛先ごとの合計)
+    console.log(mods);
     for( const [name, [def, min, max]] of GEN_ENTRIES ){
         const inst_val = (iz.generators[name] ?? inst.global_zone?.generators[name] ?? def) as number;
         const preset_val = (pz.generators[name] ?? preset.global_zone?.generators[name] ?? 0) as number;
-        p[name] = Math.min(max, Math.max(min, inst_val + preset_val));
+        let gen_val = inst_val + preset_val;
+        // 減衰量: EMU10K1 互換で、インスト/プリセットの生成子の分だけ縮める。モジュレータ(ベロシティ、CC など)の出力には掛けない
+        if( name === 'init_attenuation' ) gen_val = Math.min(max, Math.max(min, gen_val)) * ATTEN_SCALE;
+        p[name] = Math.min(max, Math.max(min, gen_val + (mods[name] ?? 0)));   // モジュレータの出力を足してから範囲に収める
     }
     p.hold_vol_env  += p.keynum_to_vol_env_hold  * k;
     p.decay_vol_env += p.keynum_to_vol_env_decay * k;

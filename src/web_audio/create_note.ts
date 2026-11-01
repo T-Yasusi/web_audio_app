@@ -33,10 +33,11 @@ export default function create_note(context: AudioContext, note: number, vel: nu
             if( !is_match_zone(note, vel, iz) ) continue;
 	    if( !iz.sample ) continue;
 	    
-            const p = calc_params(iz, inst, pz, preset, note, opts);	    
+            const p = calc_params(iz, inst, pz, preset, note, vel, opts);	    
             const source = create_buffer_source(context, note, iz.sample, iz, inst, p);
 
-            const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);
+            const { amp, end_time } = createADSREnvelope(context, start_time, duration, p);
+//            const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);
 	    const { filter, panner } = create_filter_panner(context, p);
             // 排他クラス用のゲイン。ソースの直後に置くので、止めればエフェクト送りも一緒に消える
             const cut = context.createGain();

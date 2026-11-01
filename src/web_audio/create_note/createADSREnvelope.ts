@@ -1,8 +1,7 @@
-import { ATTEN_SCALE } from '../global_vals.ts'
 import { timecents } from '../util_funcs.ts'
 
-export default function createADSREnvelope(context: AudioContext, t0: number, vel: number, duration: number, p: Record<string, number>) {
-    const base = 10 ** (-(p.init_attenuation * ATTEN_SCALE) / 200) * (vel / 127) ** 2;
+export default function createADSREnvelope(context: AudioContext, t0: number, duration: number, p: Record<string, number>) {
+    const base = 10 ** (-p.init_attenuation / 200); 
     const amp = context.createGain();
     
     const delay = timecents(p.delay_vol_env), attack = timecents(p.attack_vol_env);

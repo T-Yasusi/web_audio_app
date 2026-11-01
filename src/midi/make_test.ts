@@ -129,6 +129,10 @@ function sysex_reset() {
     ]);
 }
 
+function velocity_filter() {
+    return build([ 127, 100, 80, 64, 40, 20, 5 ].flatMap((v, i) => note(i, 0.8, 0, 60, v)));
+}
+
 export const test_songs: { name: string; make: () => MidiFile }[] = [
     { name: 'TEST: mod wheel (CC1)', make: mod_wheel },
     { name: 'TEST: channel pressure', make: pressure },
@@ -138,4 +142,5 @@ export const test_songs: { name: string; make: () => MidiFile }[] = [
     { name: 'TEST: volume / expression', make: volume },
     { name: 'TEST: tuning (RPN 1/2)', make: tuning },
     { name: 'TEST: SysEx reset (GM/GS/XG)', make: sysex_reset },
+    { name: 'TEST: velocity → cutoff', make: velocity_filter },
 ];
