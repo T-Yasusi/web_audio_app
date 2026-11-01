@@ -4,7 +4,7 @@ import calc_params from './create_note/calc_params.ts'
 import createADSREnvelope from './create_note/createADSREnvelope.ts'
 import create_buffer_source from './create_note/create_buffer_source.ts'
 import create_filter_panner from './create_note/create_filter_panner.ts'
-import attach_modulation from './create_note/attach_modulation.ts'
+import attach_modulation, { lazy_vib } from './create_note/attach_modulation.ts'
 import DynamicVoice, { set_param, lazy_send } from './create_note/dynamic_voice.ts'
 import { dynamic_modulators } from './create_note/modulator.ts'
 
@@ -12,7 +12,7 @@ import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
 
-const DYNAMIC_DESTS = new Set(['pan', 'reverb_effect_send', 'chorus_effect_send']);   // 動的なモジュレータ経由に移した宛先
+const DYNAMIC_DESTS = new Set(['pan', 'reverb_effect_send', 'chorus_effect_send', 'vib_lfo_to_pitch']);   // 動的なモジュレータ経由に移した宛先
 const CHOKE_FADE = 0.02;   // 排他クラスで止めるときのフェードアウト(秒)
 
 // ゾーンごとの「止める」ためのハンドル。同じ排他クラスの次のノートが来たときに使う
@@ -60,11 +60,13 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 		}
             ];
 
-            // 動的なモジュレータ(CC など)の反映。移行済みの宛先だけをここで扱う(今はパンのみ)
+	    // 動的なモジュレータ(CC など)の反映。移行済みの宛先だけをここで扱う(パン、リバーブ送り、コーラス送り、ビブラート)
             const dyn = new DynamicVoice(dynamic_modulators(iz, inst, pz, preset, DYNAMIC_DESTS), {
                 pan: { base: p.pan, min: -500, max: 500, apply: (v, t) => set_param(panner.pan, v / 500, t) }, // 範囲は calc_params の GEN.pan と同じ
 		reverb_effect_send: { base: p.reverb_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, reverb.input, dispose) },
                 chorus_effect_send: { base: p.chorus_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, chorus.input, dispose) },
+		vib_lfo_to_pitch: { base: p.vib_lfo_to_pitch, min: -12000, max: 12000, apply:
+				    lazy_vib(context, p, start_time, end_time, source.detune, dispose) },
             }, note, vel);
             if( !dyn.empty ){
                 dyn.update(null, channel.controllers());     // 今の値で初期化する(すぐに反映)
@@ -73,11 +75,11 @@ export default function create_note(context: AudioContext, note: number, vel: nu
             }
 	    
             attach_modulation(context, p, start_time, duration, end_time,
-			      { detune: source.detune, cutoff: filter.detune, trem, vib_depth: channel.vib, dispose });
+			      { detune: source.detune, cutoff: filter.detune, trem, dispose });
 
             active++;
             source.onended = () => {
-                // チャンネル共有ノード(bend / pan / vib)からの接続を外す。外さないと、鳴らした音符の数だけ接続が溜まる
+		// チャンネル共有ノード(bend)や、他のボイスの登録を外す。外さないと、鳴らした音符の数だけ接続が溜まる
                 dispose.forEach(f => f());
 
                 if( --active === 0 ){

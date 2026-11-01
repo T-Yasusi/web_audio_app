@@ -1,6 +1,7 @@
 import { timecents } from '../util_funcs.ts'
+import { set_param } from './dynamic_voice.ts'
 
-type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode; vib_depth?: AudioNode; dispose: (() => void)[] };
+type Target = { detune: AudioParam; cutoff: AudioParam; trem: GainNode; dispose: (() => void)[] };
 
 // モジュレーションエンベロープと LFO をボイスにつなぐ。作ったノードを返す(終了時に disconnect する)
 export default function attach_modulation(context: AudioContext, p: Record<string, number>, t0: number, duration: number, t_end: number,
@@ -41,32 +42,38 @@ export default function attach_modulation(context: AudioContext, p: Record<strin
 	    target.dispose.push(()=> shaper.disconnect());	
         }
     }
-
-    if( p.vib_lfo_to_pitch !== 0 || target.vib_depth ){
-	const lfo = make_lfo(context, t0, t_end, p.delay_vib_lfo, p.freq_vib_lfo);
-	target.dispose.push(()=> lfo.disconnect());
-	if( p.vib_lfo_to_pitch !== 0 ) route(lfo, p.vib_lfo_to_pitch, target.detune);
-	if( target.vib_depth ){
-            const g = context.createGain();
-            g.gain.value = 0;                  // 実効ゲイン = チャンネルの深さ(セント)
-            target.vib_depth.connect(g.gain);  // 深さを、ゲインに信号として足す
-            const depth_src = target.vib_depth;
-            target.dispose.push(() => depth_src.disconnect(g.gain));   // ボイス終了時に、チャンネル側から外す
-            lfo.connect(g);
-            g.connect(target.detune);
-	    target.dispose.push(()=> g.disconnect());
-	}
-    }
 }
 
 // SF2 の LFO は三角波。ディレイの間は出力0で、その後ゼロから立ち上がる
-function make_lfo(context: AudioContext, t0: number, t_end: number, delay_tc: number, freq_cents: number) {
+function make_lfo(context: AudioContext, t0: number, t_end: number, delay_tc: number, freq_cents: number, not_before = 0) {
     const osc = context.createOscillator();
     osc.type = 'triangle';
     osc.frequency.value = 8.176 * 2 ** (freq_cents / 1200);
-    osc.start(t0 + timecents(delay_tc));
+    osc.start(Math.max(not_before, t0 + timecents(delay_tc)));
     osc.stop(t_end);
     return osc;
+}
+
+// ビブラート(vib_lfo_to_pitch)。LFO の出力に cents を掛けて、detune に足す。
+// cents(深さ)が 0 のうちは LFO を作らず、初めて 0 以外になったときに作る。戻り値は Target.apply として使う
+export function lazy_vib(context: AudioContext, p: Record<string, number>, t0: number, t_end: number,
+                         detune: AudioParam, dispose: (() => void)[]) {
+    let g: GainNode | null = null;
+    return (cents: number, time: number | null) => {
+        if( !g ){
+            if( cents === 0 ) return;
+            const at = time ?? t0;
+            if( at >= t_end ) return;                  // 鳴り終わった後には作らない
+            const lfo = make_lfo(context, t0, t_end, p.delay_vib_lfo, p.freq_vib_lfo, at);
+            const gain = context.createGain();
+            gain.gain.value = 0;                       // 0 から始めて、なめらかに上げる
+            lfo.connect(gain);
+            gain.connect(detune);
+            dispose.push(() => { lfo.disconnect(); gain.disconnect(); });
+            g = gain;
+        }
+        set_param(g.gain, cents, time);
+    };
 }
 
 // 入力 -1〜1 → 振幅の倍率 10^(x × cB/200)。cB ごとにキャッシュする

@@ -1,5 +1,5 @@
 import { SMOOTH } from './global_vals.ts'
-import { concave, depth } from './util_funcs.ts'
+import { concave } from './util_funcs.ts'
 import type { Controllers } from './create_note/modulator.ts'
 import type DynamicVoice from './create_note/dynamic_voice.ts'
 
@@ -10,7 +10,6 @@ export type ChannelState = {
     bend_range: number;
     rpn_msb: number;
     rpn_lsb: number;
-    mod: number;
     pressure: number;
     coarse_tune: number;   // 半音
     fine_tune: number;     // セント
@@ -21,7 +20,6 @@ export type ChannelState = {
 class Channel{
     input: GainNode;
     bend: ConstantSourceNode;
-    vib: ConstantSourceNode;
     state: ChannelState;
     cc: number[] = new Array(128).fill(0);          // コントローラ(CC)の現在値。モジュレータのソースになる
     voices = new Set<DynamicVoice>();               // 鳴っている音のうち、動的なモジュレータを持つもの
@@ -29,14 +27,11 @@ class Channel{
     constructor(context: AudioContext, output: AudioNode){
         this.input = context.createGain();
         this.bend = context.createConstantSource();
-        this.vib = context.createConstantSource();
         this.bend.offset.value = 0;
-        this.vib.offset.value = 0;
         this.bend.start();
-        this.vib.start();
         this.state = { volume: 100, expression: 127,
                        bend: 0, bend_range: 2, rpn_msb: 127, rpn_lsb: 127,
-                       mod: 0, pressure: 0,
+                       pressure: 0,
 		       coarse_tune: 0, fine_tune: 0, fine_msb: 64, fine_lsb: 0 };
         // state と実際のゲインを一致させる(CC7 が来るまで食い違わないように)
         this.input.gain.value = concave(this.state.volume) * concave(this.state.expression);
@@ -65,22 +60,17 @@ class Channel{
 	const cents = this.state.bend / 8192 * this.state.bend_range * 100 + this.state.coarse_tune * 100 + this.state.fine_tune;
 	this.bend.offset.setTargetAtTime(cents, time, SMOOTH);
     }
-    
-    update_vib(time: number){
-	this.vib.offset.setTargetAtTime(depth(this.state), time, SMOOTH);
-    }
-    
+        
     update_pressure(time: number, value: number){
 	this.state.pressure = value;
 	this.notify(time, 'pressure');
-	this.update_vib(time);
     }
     
     change_state(time: number, cc: number, value: number){
 	this.cc[cc] = value;
         this.notify(time, `cc:${cc}`);
-	if( cc === 1 ){ this.state.mod = value; this.update_vib(time); }
-	else if( cc === 6 || cc === 38 ) this.data_entry(time, cc, value);
+	// CC1(モジュレーションホイール)は、モジュレータ経由で音ごとに反映する(DynamicVoice)
+	if( cc === 6 || cc === 38 ) this.data_entry(time, cc, value);
         else if( cc === 7 || cc === 11 ){
             if( cc === 7 ) this.state.volume = value; else this.state.expression = value;
             this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
@@ -110,7 +100,9 @@ class Channel{
         this.state.expression = 127;
         this.input.gain.setTargetAtTime(concave(this.state.volume) * concave(this.state.expression), time, SMOOTH);
         this.update_bend(time, 0);
-	this.update_vib(time);
+        // モジュレーションホイールとプレッシャーを戻す
+        this.cc[1] = 0; this.notify(time, 'cc:1');
+        this.state.pressure = 0; this.notify(time, 'pressure');
 	
         this.state.rpn_msb = 127;
         this.state.rpn_lsb = 127;
