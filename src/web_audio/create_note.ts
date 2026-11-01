@@ -12,11 +12,12 @@ import Channel from './Channel.ts'
 import Reverb from './Reverb.ts'
 import Chorus from './Chorus.ts'
 
-const DYNAMIC_DESTS = new Set(['pan', 'reverb_effect_send', 'chorus_effect_send', 'vib_lfo_to_pitch']);   // 動的なモジュレータ経由に移した宛先
+// 動的なモジュレータ経由に移した宛先
+const DYNAMIC_DESTS = new Set(['pan', 'reverb_effect_send', 'chorus_effect_send', 'vib_lfo_to_pitch', 'fine_tune']); 
 const CHOKE_FADE = 0.02;   // 排他クラスで止めるときのフェードアウト(秒)
 
 // ゾーンごとの「止める」ためのハンドル。同じ排他クラスの次のノートが来たときに使う
-export type ZoneVoice = { exclusive_class: number; start_time: number; end_time: number; choke: (time: number) => void };
+export type ZoneVoice = { exclusive_class: number; start_time: number; end_time: number; choke: (time: number) => voisd };
 export type Voice = { output: GainNode; zones: ZoneVoice[] };
 
 export default function create_note(context: AudioContext, note: number, vel: number,
@@ -37,7 +38,8 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 	    
             const p = calc_params(iz, inst, pz, preset, note, vel, opts);	    
             const source = create_buffer_source(context, note, iz.sample, iz, inst, p);
-
+            const detune_base = source.detune.value;   // ルートキー、チューニング、サンプルの補正などの合計。動的な分は、これに足す
+	    
             const { amp, end_time } = createADSREnvelope(context, start_time, duration, p);
 //            const { amp, end_time } = createADSREnvelope(context, start_time, vel, duration, p);
 	    const { filter, panner } = create_filter_panner(context, p);
@@ -50,21 +52,24 @@ export default function create_note(context: AudioContext, note: number, vel: nu
             filter.connect(panner);
 	    panner.connect(trem);
 	    trem.connect(merger);
-	    
-            channel.bend.connect(source.detune);
+
+	    channel.tune.connect(source.detune);   // RPN 1/2 のチューニング
             const dispose: (() => void)[] = [
 		() => {
 		    source.disconnect(); cut.disconnect(); amp.disconnect(); filter.disconnect(); panner.disconnect();
-		    channel.bend.disconnect(source.detune);
+		    channel.tune.disconnect(source.detune);
 		    trem.disconnect();
 		}
             ];
-
-	    // 動的なモジュレータ(CC など)の反映。移行済みの宛先だけをここで扱う(パン、リバーブ送り、コーラス送り、ビブラート)
+	    
+	    // 動的なモジュレータ(CC など)の反映。移行済みの宛先だけをここで扱う(パン、リバーブ送り、コーラス送り、ビブラート、ピッチベンド)
             const dyn = new DynamicVoice(dynamic_modulators(iz, inst, pz, preset, DYNAMIC_DESTS), {
                 pan: { base: p.pan, min: -500, max: 500, apply: (v, t) => set_param(panner.pan, v / 500, t) }, // 範囲は calc_params の GEN.pan と同じ
 		reverb_effect_send: { base: p.reverb_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, reverb.input, dispose) },
                 chorus_effect_send: { base: p.chorus_effect_send, min: 0, max: 1000, apply: lazy_send(context, panner, chorus.input, dispose) },
+		// ピッチベンド(既定モジュレータの fine_tune)。生成子の ±99 セントの制限は受けない(ベンドは ±数百〜数千セント)。
+                // 生成子の分(p.fine_tune)は detune_base に入っているので、ここでの値はモジュレータの出力だけ
+                fine_tune: { base: 0, min: -12700, max: 12700, apply: (v, t) => set_param(source.detune, detune_base + v, t) },
 		vib_lfo_to_pitch: { base: p.vib_lfo_to_pitch, min: -12000, max: 12000, apply:
 				    lazy_vib(context, p, start_time, end_time, source.detune, dispose) },
             }, note, vel);
@@ -79,7 +84,7 @@ export default function create_note(context: AudioContext, note: number, vel: nu
 
             active++;
             source.onended = () => {
-		// チャンネル共有ノード(bend)や、他のボイスの登録を外す。外さないと、鳴らした音符の数だけ接続が溜まる
+		// チャンネル共有ノード(tune)や、チャンネルへのボイスの登録を外す。外さないと、鳴らした音符の数だけ接続が溜まる
                 dispose.forEach(f => f());
 
                 if( --active === 0 ){

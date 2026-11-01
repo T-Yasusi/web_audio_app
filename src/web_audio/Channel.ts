@@ -19,16 +19,16 @@ export type ChannelState = {
 
 class Channel{
     input: GainNode;
-    bend: ConstantSourceNode;
+    tune: ConstantSourceNode;     // RPN 1/2(ファイン、コース チューニング)のセント。ピッチベンドは、モジュレータ経由で音ごとに反映する
     state: ChannelState;
     cc: number[] = new Array(128).fill(0);          // コントローラ(CC)の現在値。モジュレータのソースになる
     voices = new Set<DynamicVoice>();               // 鳴っている音のうち、動的なモジュレータを持つもの
     
     constructor(context: AudioContext, output: AudioNode){
         this.input = context.createGain();
-        this.bend = context.createConstantSource();
-        this.bend.offset.value = 0;
-        this.bend.start();
+	this.tune = context.createConstantSource();
+        this.tune.offset.value = 0;
+        this.tune.start();
         this.state = { volume: 100, expression: 127,
                        bend: 0, bend_range: 2, rpn_msb: 127, rpn_lsb: 127,
                        pressure: 0,
@@ -57,8 +57,10 @@ class Channel{
     update_bend(time: number, value: number){
 	this.state.bend = value;
 	this.notify(time, 'bend');
-	const cents = this.state.bend / 8192 * this.state.bend_range * 100 + this.state.coarse_tune * 100 + this.state.fine_tune;
-	this.bend.offset.setTargetAtTime(cents, time, SMOOTH);
+    }
+
+    update_tuning(time: number){
+        this.tune.offset.setTargetAtTime(this.state.coarse_tune * 100 + this.state.fine_tune, time, SMOOTH);
     }
         
     update_pressure(time: number, value: number){
@@ -89,10 +91,9 @@ class Channel{
 	else if( rpn_lsb === 1 ){
             if( cc === 6 ) this.state.fine_msb = value; else this.state.fine_lsb = value;
             this.state.fine_tune = (((this.state.fine_msb << 7) | this.state.fine_lsb) - 8192) / 8192 * 100;
+	    this.update_tuning(time);
 	}
 	else if( rpn_lsb === 2 && cc === 6 ) this.state.coarse_tune = value - 64;
-	else return;
-	this.update_bend(time, this.state.bend);
     }
     
     reset_state(time: number){
@@ -113,6 +114,7 @@ class Channel{
 	this.state.bend_range = 2;
 	this.state.coarse_tune = 0; this.state.fine_tune = 0;     // RPN 1/2 を入れた場合
 	this.state.fine_msb = 64;   this.state.fine_lsb = 0;
+	this.update_tuning(time);
 	this.cc[10] = 64; this.notify(time, 'cc:10');     // パンを中央へ
 	this.reset_state(time);   // expression、ベンド、RPN の選択、リバーブ、コーラス、ホイール(CC1 を入れた場合)
     }
