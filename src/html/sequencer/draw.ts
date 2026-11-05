@@ -11,7 +11,7 @@ export default function draw_sequencer(midi_json: MidiFile){
     
     const svg = document.getElementById('sequencer-svg');
     svg?.replaceChildren();
-    const styles = window.getComputedStyle(svg);
+    const styles = window.getComputedStyle(svg as HTMLElement);
     const height = parseFloat(styles.height);
     const width  = parseFloat(styles.width);
 
@@ -29,7 +29,6 @@ export default function draw_sequencer(midi_json: MidiFile){
             
     for( const event of midi_json.events ){
 	const note = event as Note;
-	const note_svg = document.createElementNS(NS, 'rect');
 	svg?.appendChild(createSVGElem('rect', { x: factorX * note.tick, y: factorY * (127 - note.midi_note),
 						 width: factorX * (note.endTick - note.tick), height: factorY,
 						 rx: 0.25 * factorX, ry: 0.25 * factorY,
