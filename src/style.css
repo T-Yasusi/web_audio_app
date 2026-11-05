@@ -2,10 +2,22 @@
 }
 
 input[type="number"]{
-    width: 80px; 
+    width: 80x; 
 }
 
 header { text-align: center; }
+
+main > div { text-align: center; }
+
+#svg-warp {
+    overflow: auto;
+    width: 100%;
+}
+#svg-warp > svg {
+    width: 5000px;
+    height: 600px;
+}
+
 #tune_slider { width: 90%; }
 
 

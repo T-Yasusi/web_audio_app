@@ -3,7 +3,6 @@ export type MidiInfo = {
     ntrack: number;
     division: number;
     tracks: Array<Array<Event>>;
-
 }
 
 export type MidiFile = {

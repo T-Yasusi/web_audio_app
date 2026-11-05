@@ -30,9 +30,14 @@
       <button id="play_midi" disabled>再生</button>
     </header>
 
-    <div id="main">
-      <div id="sf_table"></div>
-    </div>
+    <main>
+      <div id="sequencer">
+	Division: <input type="number" id="division" readonly></input> <br>
+      </div>
+      <div id="svg-warp">
+	<svg xmlns="http://www.w3.org/2000/svg" id="sequencer-svg" > </svg>
+      </div>
+    </main>
     
     <footer>
     </footer>
