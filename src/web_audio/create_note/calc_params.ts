@@ -51,7 +51,7 @@ export default function calc_params(iz: InstZone, inst: Instrument, pz: PresetZo
     const p: Record<string, number> = {};
     const k = 60 - note;
     const mods = calc_static_mods(iz, inst, pz, preset, note, vel);   // モジュレータの出力(宛先ごとの合計)
-    console.log(mods);
+//    console.log(mods);
     for( const [name, [def, min, max]] of GEN_ENTRIES ){
         const inst_val = (iz.generators[name] ?? inst.global_zone?.generators[name] ?? def) as number;
         const preset_val = (pz.generators[name] ?? preset.global_zone?.generators[name] ?? 0) as number;

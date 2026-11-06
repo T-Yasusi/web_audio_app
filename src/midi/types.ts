@@ -9,6 +9,7 @@ export type MidiFile = {
     format: number;
     division: number;
     tempos: Event[];
+    timeSigs: Event[];
     events: Event[];
     time_table: { ticks: number[], secs: number[], rates: number[] };
     duration: number;

@@ -8,6 +8,8 @@ import './html/set_audio_context.ts'
 import './html/sync_gain.ts'
 import './html/play_midi.ts'
 import './html/set_midi_info.ts'
+import './html/set_tune_slider.ts'
+import './html/set_play_time.ts'
 
 await Promise.all([
     load_sf_file(),

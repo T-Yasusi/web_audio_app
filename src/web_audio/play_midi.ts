@@ -1,9 +1,11 @@
 import type { MidiFile } from '../midi/types.ts'
 import type { SFFile } from '../sf/types.ts'
+
+//import set_play_time from '../html/set_play_time.ts'
+
 import manager from './manager.ts'
 import calc_time from './calc_time.ts'
 import MIDIPlayer from './MIDIPlayer.ts'
-import set_tune_slider from '../html/set_tune_slider.ts'
 
 const LOOKAHEAD = 1.1;   // 先読みする秒数
 const INTERVAL = 1000;   // タイマーの間隔(ms)。先読みより短くする
@@ -38,7 +40,6 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
 	    manager.timer = undefined;
 	    manager.finished = true;
 	}
-	set_tune_slider(manager.player);
     }
 
     scheduling();

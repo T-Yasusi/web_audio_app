@@ -15,6 +15,12 @@ export default function build_song(json: MidiInfo) : MidiFile{
     if( tempos.length === 0 || tempos[0].tick > 0 )
         tempos.unshift({ tick: 0, event: 'Meta', type: 'Set Tempo', id: 0x51, data: DEFAULT_TEMPO });
 
+    const timeSigs = json.tracks.flat()
+        .filter((e: Event) => e.event === 'Meta' && e.type === 'Time Signature')
+        .sort((a: Event, b: Event) => a.tick - b.tick);
+    if( timeSigs.length === 0 || timeSigs[0].tick > 0 )
+        timeSigs.unshift({ tick: 0, event: 'Meta', type: 'Time Signature', id: 0x58, data: { nn: 4, dd: 2, cc: 24, bb: 8 } });
+
     // ノートは全トラックから作る。MIDIイベントのないトラック(テンポ専用トラックなど)は除く
     const tracks = json.tracks.map(build_track).filter((t: Event[]) => t.length > 0);
     const events = tracks.flat().sort((a: Event, b: Event) => a.tick - b.tick);;
@@ -39,7 +45,7 @@ export default function build_song(json: MidiInfo) : MidiFile{
     }
     
     adjust_note_ends(json.tracks.flat(), tracks.flat());   // 元のイベント(CC)と、組み立てたノートを渡す
-    return { format: json.format, division: json.division, tempos, events, time_table: { ticks, secs, rates }, duration: time };
+    return { format: json.format, division: json.division, tempos, timeSigs, events, time_table: { ticks, secs, rates }, duration: time };
 }
 
 function build_track(events: Event[]) {

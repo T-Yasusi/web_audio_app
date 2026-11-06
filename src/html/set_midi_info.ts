@@ -1,4 +1,4 @@
-import type { Event, Note } from '../midi/types.ts'
+import type { Note } from '../midi/types.ts'
 import calc_time from '../web_audio/calc_time.ts'
 import manager from '../web_audio/manager.ts'
 import draw_sequencer from './sequencer/draw.ts'
@@ -18,10 +18,7 @@ document.getElementById('midi_file')!.addEventListener('change', (e) => {
     
     (document.getElementById('tune_duration')! as HTMLInputElement).value = (Math.round(10*time)/10).toString();
 
-    const notes = midi_json.events.filter((a: Event) => a.type ==='note');
-    (document.getElementById('notes')! as HTMLInputElement).value = notes.length.toString();
-
-    console.log(midi_json);
+//    console.log(midi_json);
     (document.getElementById('division')! as HTMLInputElement).value = midi_json.division.toString();
 
     draw_sequencer(midi_json);
