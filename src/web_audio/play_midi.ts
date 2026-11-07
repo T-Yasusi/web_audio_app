@@ -17,14 +17,16 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
     
     const player = new MIDIPlayer(context, manager.master_gain, sf_json.presets, midi_json);
     manager.player = player;
-    manager.finished = false;
     if( manager.timer !== undefined ) clearInterval(manager.timer);   // 前の曲のタイマーが残らないように
     const total = player.duration;
 
     function scheduling() {
         const song_now = context.currentTime + player.time_offset;   // 曲の何秒目か
         const horizon = song_now + LOOKAHEAD;
-	
+
+	console.log(player.index);
+	console.log(player.events.length);
+	console.log(manager.finished);
         while( player.index < player.events.length ){
             const event = player.events[player.index];
             const start = calc_time(event.tick, player.time_table);
@@ -38,7 +40,6 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
 	    manager.context.suspend();
 	    clearInterval(manager.timer);
 	    manager.timer = undefined;
-	    manager.finished = true;
 	}
     }
 

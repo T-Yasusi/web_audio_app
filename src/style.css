@@ -10,11 +10,11 @@ table { margin: 0 auto; }
 
 main > div { text-align: center; }
 
-#svg-warp {
+#svg-wrap {
     overflow: auto;
     width: 100%;
 }
-#svg-warp > svg {
+#svg-wrap > svg {
     width: 5000px;
     height: 600px;
 }

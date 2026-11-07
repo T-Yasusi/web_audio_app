@@ -9,7 +9,6 @@ class Manager {
     sf_files: SFFile[];
     player?: MIDIPlayer;
     timer?: ReturnType<typeof setInterval>;   // 先読みスケジューラのタイマー
-    finished = false;                         // 曲を最後まで鳴らし終えた
     
     constructor(){
 	this.context = new AudioContext();
@@ -23,13 +22,15 @@ class Manager {
     reconstruct(){
 	if( this.timer !== undefined ){ clearInterval(this.timer); this.timer = undefined; }   // 前の曲のスケジューラを止める
 	this.player = undefined;
-	this.finished = false;
 	this.context.close();
 	this.context = new AudioContext();
 	this.context.suspend();
 	this.master_gain = this.context.createGain();
 	this.master_gain.connect(this.context.destination);
     }
+
+    get finished(){ return this.player ? this.player.index >= this.player.events.length : false; }
+    get onplaying(){ return this.player ? this.player.index <= his.player.events.length : false; }
 }
 
 const manager = new Manager();

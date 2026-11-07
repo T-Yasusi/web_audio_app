@@ -9,6 +9,7 @@ const createSVGElem = (name: string, attrs: Record<string, string | number>) => 
     return elem;
 };
 
+const wrap = document.getElementById('svg-wrap');
 const svg = document.getElementById('sequencer-svg');
 const styles = window.getComputedStyle(svg as HTMLElement);
 const height = parseFloat(styles.height);
@@ -23,9 +24,11 @@ const animate = () => {
 	while( calc_time(tick, player.time_table) < time ) tick++;
 	const max_tick = player.events.reduce((v, a) => Math.max(a.tick, (a as Note).endTick ? (a as Note).endTick : 0, v), 0);
 
-	console.log(tick, max_tick, tick/max_tick);
+//	console.log(tick, max_tick, tick/max_tick);
 	time_bar.setAttribute('x1', (0.95*width*tick/max_tick).toString());
 	time_bar.setAttribute('x2', (0.95*width*tick/max_tick).toString());
+	wrap.scrollLeft = 0.95*width*tick/max_tick;
+
     }
     requestAnimationFrame(animate);
 }

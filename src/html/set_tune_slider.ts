@@ -2,10 +2,13 @@ import calc_time from '../web_audio/calc_time.ts'
 import manager from '../web_audio/manager.ts'
 
 const slider = document.getElementById('tune_slider') as HTMLInputElement;
+let dragging = false;
+slider.addEventListener('pointerdown', () => { dragging = true; });
+window.addEventListener('pointerup', () => { dragging = false; });
 
 setInterval(()=>{
     const player = manager.player;
-    if( player && player.events[player.index] ){
+    if( player && player.events[player.index] && !dragging ){
         const time = manager.context.currentTime + player.time_offset;
         slider.value = (Math.round(100*time)/100/player.duration).toString();
     }
