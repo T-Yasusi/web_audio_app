@@ -5,7 +5,7 @@ class Chorus{
     output: GainNode;
     delays = Array<DelayNode>();
     depths = Array<GainNode>();    
-    oscillator = Array<AudioNode>();
+    oscillator = Array<OscillatorNode>();
     
     constructor(context: AudioContext, gain: GainNode,
 		voices = CHORUS_VOICES, base = CHORUS_BASE, rate = CHORUS_RATE, depth = CHORUS_DEPTH, wet = CHORUS_WET){
@@ -40,7 +40,7 @@ class Chorus{
 	}
     }
     set_depth(depth: number){ this.depths.forEach(amount => amount.gain.value = depth); }
-    set_waveform(type: string){ this.oscillator.forEach(osci => osci.type = type); }
+    set_waveform(type: OscillatorType){ this.oscillator.forEach(osci => osci.type = type); }
 }
 
 export default Chorus;
