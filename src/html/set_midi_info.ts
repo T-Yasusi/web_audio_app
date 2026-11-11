@@ -17,8 +17,6 @@ document.getElementById('midi_file')!.addEventListener('change', (e) => {
     }
     
     (document.getElementById('tune_duration')! as HTMLInputElement).value = (Math.round(10*time)/10).toString();
-
-//    console.log(midi_json);
     (document.getElementById('division')! as HTMLInputElement).value = midi_json.division.toString();
 
     draw_sequencer(midi_json);

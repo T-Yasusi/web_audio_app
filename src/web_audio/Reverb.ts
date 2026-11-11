@@ -1,9 +1,11 @@
+import { REVERB_WET, REVERB_SECOND, REVERB_RT60, REVERB_PREDELAY, REVERB_DAMPING } from './parameters.ts'
+
 class Reverb{
     input: GainNode;
     output: GainNode;
     conv: ConvolverNode;
 
-    constructor(context: AudioContext, gain: GainNode, wet = 0.5){
+    constructor(context: AudioContext, gain: GainNode, wet = REVERB_WET){
 	this.input = context.createGain();
 	this.output = context.createGain();
 	this.output.gain.value = wet;
@@ -20,7 +22,7 @@ export default Reverb;
 
 // 指数減衰するステレオのノイズ。左右で別のノイズにすると広がりが出る
 function make_impulse(context: AudioContext,
-                      seconds = 2.0, rt60 = 1.8, predelay = 0.02, damping = 0.6) {
+                      seconds = REVERB_SECOND, rt60 = REVERB_RT60, predelay = REVERB_PREDELAY, damping = REVERB_DAMPING) {
     const rate = context.sampleRate, len = Math.floor(rate * seconds);
     const buf = context.createBuffer(2, len, rate);
     for( let ch = 0; ch < 2; ch++ ){

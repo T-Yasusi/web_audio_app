@@ -30,7 +30,7 @@ class Manager {
     }
 
     get finished(){ return this.player ? this.player.index >= this.player.events.length : false; }
-    get onplaying(){ return this.player ? this.player.index <= his.player.events.length : false; }
+    get onplaying(){ return this.player ? this.player.index <= this.player.events.length : false; }
 }
 
 const manager = new Manager();

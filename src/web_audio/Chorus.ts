@@ -1,10 +1,14 @@
+import { CHORUS_VOICES, CHORUS_BASE, CHORUS_RATE, CHORUS_DEPTH, CHORUS_WET } from './parameters.ts'
+
 class Chorus{
     input: GainNode;
     output: GainNode;
-    
+    delays = Array<DelayNode>();
+    depths = Array<GainNode>();    
     oscillator = Array<AudioNode>();
-
-    constructor(context: AudioContext, gain: GainNode, voices = 3, base = 0.025, rate = 0.5, depth = 0.002, wet = 0.6){
+    
+    constructor(context: AudioContext, gain: GainNode,
+		voices = CHORUS_VOICES, base = CHORUS_BASE, rate = CHORUS_RATE, depth = CHORUS_DEPTH, wet = CHORUS_WET){
 	this.input = context.createGain();
 	this.output = context.createGain();
 	this.output.gain.value = wet;
@@ -30,9 +34,13 @@ class Chorus{
 	    delay.connect(pan);
 	    pan.connect(this.output);
 
+	    this.delays.push(delay);
+	    this.depths.push(amount);
 	    this.oscillator.push(lfo);
 	}
     }
+    set_depth(depth: number){ this.depths.forEach(amount => amount.gain.value = depth); }
+    set_waveform(type: string){ this.oscillator.forEach(osci => osci.type = type); }
 }
 
 export default Chorus;

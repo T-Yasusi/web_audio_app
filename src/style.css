@@ -19,6 +19,14 @@ main > div { text-align: center; }
     height: 600px;
 }
 
+.flex-container {
+    display: flex;
+    gap: 16px;          /* 要素間の余白 */
+}
+.box {
+    flex: 1;            /* 均等幅。固定幅にしたいなら width を指定 */
+}
+
 #tune_slider { width: 90%; }
 
 

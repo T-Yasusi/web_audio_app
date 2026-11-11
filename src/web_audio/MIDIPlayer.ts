@@ -6,9 +6,9 @@ import Chorus from './Chorus.ts'
 import calc_time from './calc_time.ts'
 import is_system_reset from './is_system_reset.ts'
 
-const LEAD = 0.05;        // 再生開始までの余裕(秒)
 import create_note from './create_note.ts'
 import type { ZoneVoice } from './create_note.ts'
+import { LEAD } from './parameters.ts'
 
 class MIDIPlayer{
     context: AudioContext

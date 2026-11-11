@@ -1,15 +1,11 @@
 import type { MidiFile } from '../midi/types.ts'
 import type { SFFile } from '../sf/types.ts'
 
-//import set_play_time from '../html/set_play_time.ts'
-
 import manager from './manager.ts'
 import calc_time from './calc_time.ts'
 import MIDIPlayer from './MIDIPlayer.ts'
 
-const LOOKAHEAD = 1.1;   // 先読みする秒数
-const INTERVAL = 1000;   // タイマーの間隔(ms)。先読みより短くする
-const TAIL = 4;          // 最後のイベントの後、リリースとリバーブの余韻を待つ秒数
+import { LOOKAHEAD, INTERVAL, TAIL } from './parameters.ts'
 
 export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
     const context = manager.context;
@@ -24,9 +20,6 @@ export default async function play_midi(midi_json: MidiFile, sf_json: SFFile) {
         const song_now = context.currentTime + player.time_offset;   // 曲の何秒目か
         const horizon = song_now + LOOKAHEAD;
 
-	console.log(player.index);
-	console.log(player.events.length);
-	console.log(manager.finished);
         while( player.index < player.events.length ){
             const event = player.events[player.index];
             const start = calc_time(event.tick, player.time_table);
