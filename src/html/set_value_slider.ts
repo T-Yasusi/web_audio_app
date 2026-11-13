@@ -36,12 +36,12 @@ set_value_slider(REVERB_WET,
 		 document.getElementById('reverb-wet') as HTMLInputElement,
 		 document.getElementById('reverb-wet-slider') as HTMLInputElement);
 		 
-function animate(){
-    if( manager.player ){
-	manager.player.reverb.output.gain.value = Number((document.getElementById('reverb-wet') as HTMLInputElement).value);
-	manager.player.chorus.output.gain.value = Number((document.getElementById('chorus-wet') as HTMLInputElement).value);
-	manager.player.chorus.set_depth(Number((document.getElementById('chorus-depth') as HTMLInputElement).value));
-    }
-    requestAnimationFrame(animate);
-}
-requestAnimationFrame(animate);
+// function animate(){
+//     if( manager.player ){
+// 	manager.player.reverb.output.gain.value = Number((document.getElementById('reverb-wet') as HTMLInputElement).value);
+// 	manager.player.chorus.output.gain.value = Number((document.getElementById('chorus-wet') as HTMLInputElement).value);
+// 	manager.player.chorus.set_depth(Number((document.getElementById('chorus-depth') as HTMLInputElement).value));
+//     }
+//     requestAnimationFrame(animate);
+// }
+// requestAnimationFrame(animate);

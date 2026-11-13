@@ -22,10 +22,12 @@ class Manager {
     reconstruct(){
 	if( this.timer !== undefined ){ clearInterval(this.timer); this.timer = undefined; }   // 前の曲のスケジューラを止める
 	this.player = undefined;
+	const volume = this.master_gain.gain.value; 
 	this.context.close();
 	this.context = new AudioContext();
 	this.context.suspend();
 	this.master_gain = this.context.createGain();
+	this.master_gain.gain.value = volume; 
 	this.master_gain.connect(this.context.destination);
     }
 
